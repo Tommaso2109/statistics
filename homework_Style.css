@@ -117,6 +117,15 @@ body {
     .header-title {
         margin: 1rem 0;
     }
+
+    .header-home-btn{
+      min-width: 220px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+
 }
 
 h1 {
