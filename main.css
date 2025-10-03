@@ -1,0 +1,108 @@
+body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: url('bg.jpg') no-repeat center center fixed;
+    background-size: cover;    
+    margin: 0;
+    padding: 0;
+    color: #222;
+}
+.main-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem 2rem;
+    background: #fc7575;
+    color: #fff;
+    border-bottom-left-radius: 30px;
+    border-bottom-right-radius: 30px;
+    position : relative;
+}
+.header-title {
+    flex: 1 1 0;
+    text-align: center;
+    position: relative;
+    left: 0;
+    right: 0;
+    margin: 0 2rem;
+}
+.profile-photo img {
+    width: 220px;
+    height: 220px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #fff;
+    image-rendering: auto; 
+}
+
+.space{
+    min-width: 220px;
+}
+
+
+@media (max-width: 700px) {
+    .main-header {
+        flex-direction: column;
+        padding: 1rem;
+        text-align: center;
+    }
+    .header-title {
+        margin: 1rem 0;
+    }
+
+    .searchBox {
+        margin: 0 auto 1rem auto;
+    }
+
+}
+
+
+h1 {
+    margin: 0 0 0.5rem 0;
+    font-size: 70px;
+    text-shadow: 6px 6px 3px rgba(0,0,0,0.4);
+    letter-spacing: 1px;
+}
+main {
+    max-width: 600px;
+    margin: 2rem auto;
+    border-radius: 18px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    padding: 2rem;
+    text-align: center;
+    border: white 0.5px solid;
+}
+h2 {
+    color: #ffffff;
+    margin-top: 0;
+
+}
+ul {
+    list-style: none;
+    padding: 0;
+}
+li {
+    background: #f1f5f9;
+    margin-bottom: 1rem;
+    padding: 1rem;
+    border-radius: 10px;
+    transition: background 0.2s;
+}
+li:hover {
+    background: #dbeafe;
+}
+a {
+    color: #ff0000;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+a:hover {
+    color: #ff0000;
+    text-decoration: underline;
+}
+@media (max-width: 700px) {
+    main {
+        padding: 1rem;
+    }
+}
+

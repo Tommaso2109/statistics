@@ -1,0 +1,310 @@
+body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: url('bg.jpg') no-repeat center center fixed;
+    background-size: cover;    
+    margin: 0;
+    padding: 0;
+    color: #222;
+}
+.main-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem 2rem;
+    background: #fc7575;
+    color: #fff;
+    border-bottom-left-radius: 30px;
+    border-bottom-right-radius: 30px;
+    position : relative;
+}
+.header-title {
+    flex: 1 1 0;
+    text-align: center;
+    position: relative;
+    left: 0;
+    right: 0;
+    margin: 0 2rem;
+}
+.profile-photo img {
+    width: 220px;
+    height: 220px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #fff;
+    image-rendering: auto; 
+}
+/* From Uiverse.io by vinodjangid07 */ 
+.header-home-btn{
+  min-width: 220px;
+
+}
+.Btn {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 45px;
+  height: 45px;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition-duration: .3s;
+  box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.199);
+  background-color: rgb(255, 65, 65);
+}
+
+/* plus sign */
+.sign {
+  width: 100%;
+  transition-duration: .3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sign svg {
+  
+  width: 17px;
+}
+
+.sign svg path {
+  fill: white;
+}
+/* text */
+.text {
+  position: absolute;
+  right: 0%;
+  width: 0%;
+  opacity: 0;
+  color: white;
+  font-size: 1.2em;
+  font-weight: 600;
+  transition-duration: .3s;
+}
+/* hover effect on button width */
+.Btn:hover {
+  width: 125px;
+  border-radius: 40px;
+  transition-duration: .3s;
+}
+
+.Btn:hover .sign {
+  width: 30%;
+  transition-duration: .3s;
+}
+
+.btn:hover .sign svg {
+  margin-right: 20px;
+}
+/* hover effect button's text */
+.Btn:hover .text {
+  opacity: 1;
+  width: 70%;
+  transition-duration: .3s;
+  padding-right: 10px;
+}
+/* button click effect*/
+.Btn:active {
+  transform: translate(2px ,2px);
+}
+@media (max-width: 700px) {
+    .main-header {
+        flex-direction: column;
+        padding: 1rem;
+        text-align: center;
+    }
+    .header-title {
+        margin: 1rem 0;
+    }
+}
+
+h1 {
+    margin: 0 0 0.5rem 0;
+    font-size: 70px;
+    text-shadow: 6px 6px 3px rgba(0,0,0,0.4);
+    letter-spacing: 1px;
+}
+main {
+    max-width: 600px;
+    margin: 2rem auto;
+    background: #fc7575;
+    border-radius: 18px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    padding: 2rem;
+}
+
+main p{
+    color: white;
+}
+
+main ul{
+    color: white;
+    list-style: disc;
+    padding: 0;
+    margin-left: 2em;
+}
+main li{
+    text-align: left;
+    margin-bottom: 1rem;
+    background: transparent;
+}
+main li:hover {
+    background: transparent;
+}
+
+h2 {
+    color: #ffffff;
+    margin-top: 0;
+}
+
+ul {
+    list-style: none;
+    padding: 0;
+}
+li {
+    background: #f1f5f9;
+    margin-bottom: 1rem;
+    padding: 1rem;
+    border-radius: 10px;
+    transition: background 0.2s;
+}
+li:hover {
+    background: #dbeafe;
+}
+a {
+    color: #ff0000;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+a:hover {
+    color: #ff0000;
+    text-decoration: underline;
+}
+
+@media (max-width: 700px) {
+    main {
+        padding: 1rem;
+    }
+}
+
+/* From Uiverse.io by mobinkakei */ 
+.cta {
+  display: flex;
+  padding: 11px 33px;
+  text-decoration: none;
+  font-size: 25px;
+  color: white;
+  background: #ff0000;
+  transition: 1s;
+  box-shadow: 6px 6px 0 black;
+  transform: skewX(-15deg);
+  border: none;
+  cursor: pointer;
+}
+
+.cta:focus {
+  outline: none;
+}
+
+.cta:hover {
+  transition: 0.5s;
+  box-shadow: 10px 10px 0 #ffffff;
+}
+
+.cta .second {
+  transition: 0.5s;
+  margin-right: 0px;
+}
+
+.cta:hover .second {
+  transition: 0.5s;
+  margin-right: 45px;
+}
+
+.cta.mirrored:hover .second {
+  margin-right: 0;
+  margin-left: 45px;
+  transition: 0.5s;
+}
+
+.span {
+  transform: skewX(15deg);
+}
+
+.second {
+  margin-left: 30px;
+  position: relative;
+  top: 12%;
+}
+
+.one, .two {
+  transform-origin: left center;
+}
+
+.cta.mirrored .one,
+.cta.mirrored .two {
+  transform-origin: right center;
+}
+
+.one {
+  transition: 0.4s;
+  transform: translateX(-60%);
+}
+
+.two {
+  transition: 0.5s;
+  transform: translateX(-30%);
+}
+
+.cta:hover .three {
+  animation: color_anim 1s infinite 0.2s;
+}
+
+.cta:hover .one {
+  transform: translateX(0%);
+  animation: color_anim 1s infinite 0.6s;
+}
+
+.cta:hover .two {
+  transform: translateX(0%);
+  animation: color_anim 1s infinite 0.4s;
+}
+
+@keyframes color_anim {
+  0% {
+    fill: white;
+  }
+
+  50% {
+    fill: #ff8800;
+  }
+
+  100% {
+    fill: white;
+  }
+}
+
+.cta.mirrored .second svg {
+    transform: scaleX(-1);
+}
+.cta.mirrored .second {
+    margin-right: 16px; /* o più se serve */
+    margin-left: 0;
+    display: inline-flex;
+    align-items: center;
+}
+.nav-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 24px; /* spazio tra i bottoni */
+    margin-top: 2rem;
+}
+
+.cta .second svg {
+    width: 50px;
+    height: 20px;
+    display: inline-block;
+    vertical-align: middle;
+}
