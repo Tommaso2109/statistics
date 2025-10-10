@@ -24,8 +24,8 @@
     
                         <div class="sign"><svg xmlns="http://www.w3.org/2000/svg" 
                             viewBox="0 0 24 24" 
-                            width="240" 
-                            height="240" 
+                            width="24" 
+                            height="24" 
                             fill="black">
                         <path d="M12 3l10 8h-3v9a1 1 0 0 1-1 1h-5v-6H11v6H6a1 1 0 0 1-1-1v-9H2l">
 
@@ -41,9 +41,513 @@
         </header>
         <main>
             <section>
-                <h2>has not yet been assigned</h2>
+                <h2>DATASET</h2>
+                <p>A dataset is an organized collection of data used for analysis or processing. It typically contains observations (rows) and features or variables (columns). Datasets are commonly used for descriptive statistics, training machine learning models, or storing information.</p>
+
+                <p>Key aspects to consider:</p>
+                <ul>
+                    <li><strong>Structure</strong>: structured (tables/CSV), semi-structured (JSON, XML), or unstructured (text, images, audio).</li>
+                    <li><strong>Labels</strong>: some datasets include target values (for supervised learning), while others do not.</li>
+                    <li><strong>Metadata</strong>: schema, units, source, and collection date provide important context.</li>
+                    <li><strong>Quality</strong>: completeness, accuracy, consistency, and potential bias affect analysis results.</li>
+                    <li><strong>Privacy &amp; ethics</strong>: sensitive data require anonymization and proper consent.</li>
+                </ul>
+
+                <p>Simple example: a CSV file where each row represents a person and columns contain age, height, occupation, and optionally a "label" column for classification.</p>
+
+                <h2>DISTRIBUTION</h2>
+                <p>A distribution describes how the values of a variable are spread across possible outcomes. It tells you which values are common, which are rare, and how spread out the data are. Understanding a distribution is fundamental for summarizing data and making inferences.</p>
+
+                <p>Key points about distributions:</p>
+                <ul>
+                    <li><strong>Shape</strong>: symmetric, skewed (left/right), uniform, or multimodal (multiple peaks).</li>
+                    <li><strong>Center</strong>: measures like mean, median, and mode indicate a typical value.</li>
+                    <li><strong>Spread</strong>: variance, standard deviation, and IQR describe variability.</li>
+                    <li><strong>Tails &amp; outliers</strong>: extreme values can affect analysis and indicate special cases.</li>
+                    <li><strong>Types</strong>: discrete distributions (counts, e.g., Poisson) vs. continuous distributions (measurements, e.g., Normal).</li>
+                    <li><strong>Visualization</strong>: histograms, density plots, boxplots and empirical cumulative distribution functions help reveal distributional properties.</li>
+                </ul>
+
+                <p>Simple example: human heights are roughly normally distributed (bell-shaped), while the number of emails received per day is often skewed and better modeled with a discrete distribution.</p>
+                
+                <h3>Example dataset (people)</h3>
+                <p>Below is a small example dataset of 12 people with eye color, hair color and age. You can download the same data as a CSV file.</p>
+
+                <table>
+                    <caption>Sample dataset — 12 people</caption>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Eye color</th>
+                            <th>Hair color</th>
+                            <th>Age</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>1</td><td>Brown</td><td>Black</td><td>34</td></tr>
+                        <tr><td>2</td><td>Blue</td><td>Blonde</td><td>22</td></tr>
+                        <tr><td>3</td><td>Green</td><td>Brown</td><td>45</td></tr>
+                        <tr><td>4</td><td>Brown</td><td>Brown</td><td>29</td></tr>
+                        <tr><td>5</td><td>Hazel</td><td>Red</td><td>38</td></tr>
+                        <tr><td>6</td><td>Blue</td><td>Black</td><td>31</td></tr>
+                        <tr><td>7</td><td>Brown</td><td>Blonde</td><td>27</td></tr>
+                        <tr><td>8</td><td>Green</td><td>Brown</td><td>52</td></tr>
+                        <tr><td>9</td><td>Blue</td><td>Red</td><td>19</td></tr>
+                        <tr><td>10</td><td>Brown</td><td>Black</td><td>41</td></tr>
+                        <tr><td>11</td><td>Hazel</td><td>Blonde</td><td>36</td></tr>
+                        <tr><td>12</td><td>Green</td><td>Black</td><td>24</td></tr>
+                    </tbody>
+                </table>
+
+                <p><a href="sample_dataset.csv" download>Download CSV</a></p>
+
+                <!-- Interactive distribution UI -->
+                <div id="interactive-distribution">
+                    <h3>Interactive distribution</h3>
+                    <p>Choose one or more variables to group by. You can compute a count or the mean of <em>Age</em>. The page will calculate the distribution from the sample table and show the SQL / pandas query that would produce the same result.</p>
+
+                    <form id="dist-form">
+                        <fieldset>
+                            <legend>Select variables to group by</legend>
+                            <label><input type="checkbox" name="vars" value="Eye color" checked> Eye color</label>
+                            <label><input type="checkbox" name="vars" value="Hair color" checked> Hair color</label>
+                            <label><input type="checkbox" name="vars" value="Age"> Age</label>
+                        </fieldset>
+
+                        <label for="agg">Aggregation:</label>
+                        <select id="agg" name="agg">
+                            <option value="count">Count</option>
+                            <option value="mean">Mean of Age</option>
+                        </select>
+
+                        <button type="submit">Compute distribution</button>
+                    </form>
+
+                    <div id="dist-output">
+                        <h4>Result</h4>
+                        <div id="dist-table-wrap"></div>
+
+                        <h4>Query (SQL)</h4>
+                        <pre id="sql-query" style="white-space:pre-wrap;color:#fff;background:rgba(0,0,0,0.15);padding:0.5rem;border-radius:6px;"></pre>
+                    </div>
+
+                </div>
+
+                <h3>Text / PDF letter distribution</h3>
+                <p>Paste text below or upload a .txt file. PDFs are accepted but text extraction from PDFs requires a library (if extraction fails, try copying the text to the box).</p>
+                <textarea id="text-input" rows="6" style="width:100%;background:rgba(0,0,0,0.08);color:#fff;border-radius:6px;padding:0.5rem;" placeholder="Paste text here..."></textarea>
+                <div style="margin-top:0.5rem;">
+                    <input type="file" id="file-input" accept=".txt,.pdf" />
+                    <button id="analyze-text">Analyze text / file</button>
+
+                </div>
+
+                <div id="letter-chart" style="margin-top:1rem;"></div>
                     
+                    <!-- Caesar cipher UI -->
+                    <div id="caesar-ui" style="margin-top:1.25rem;padding-top:0.75rem;border-top:1px solid rgba(255,255,255,0.06);">
+                        <h4>Caesar cipher</h4>
+                        <p style="color:#fff;opacity:0.9;">The Caesar cipher is a simple substitution cipher that shifts each letter by a fixed number of positions (the shift). For example, with shift 3, A → D, B → E, etc. It preserves letter case and leaves non-letter characters unchanged.</p>
+                        <label for="caesar-shift">Shift (0-25): </label>
+                        <input id="caesar-shift" type="number" min="0" max="25" value="3" style="width:70px;">
+                        <div style="margin-top:0.75rem;">
+                            <label>Encrypted message:</label>
+                            <pre id="encrypted-output" style="white-space:pre-wrap;color:#fff;background:rgba(0,0,0,0.12);padding:0.5rem;border-radius:6px;min-height:2rem;"></pre>
+                        </div>
+
+                    </div>
+                    
+                    <!-- Decryption by frequency analysis -->
+                    <div id="decryption-ui" style="margin-top:1rem;">
+                        <h4>Automatic decryption (frequency analysis)</h4>
+                        <p id="decryption-explain" style="color:#fff;opacity:0.95;">When you analyze text, the page encrypts it with a Caesar cipher (shift). To try to recover the original message, we compare the letter frequency distribution of the encrypted message with a reference distribution for Italian. The script tests every possible shift and picks the one that makes the rotated ciphertext distribution closest to Italian — then it applies that shift to decrypt the text.</p>
+
+                            <p><strong>Guessed shift:</strong> <span id="guessed-shift">—</span> <small id="candidate-pos" style="color:#fff;opacity:0.8"></small></p>
+                            <p><strong>Decrypted attempt:</strong></p>
+                            <pre id="decrypted-output" style="white-space:pre-wrap;color:#fff;background:rgba(0,0,0,0.12);padding:0.5rem;border-radius:6px;min-height:2rem;"></pre>
+                            <div style="margin-top:0.5rem;">
+                                <button id="next-guess-btn">This decrypted message is wrong — try next guess</button>
+                            </div>
+
+                        <h4>Distributions</h4>
+                        <div id="italian-chart" style="margin-top:0.25rem;"></div>
+                        <div id="cipher-chart" style="margin-top:0.25rem;"></div>
+                    </div>
+
+
+
             </section>
+            <!-- script: interactive distribution -->
+            <script>
+                // Utility: read sample table into array of objects
+                function readSampleTable() {
+                    const table = document.querySelector('table');
+                    const headers = Array.from(table.querySelectorAll('thead th')).map(h => h.textContent.trim());
+                    const rows = Array.from(table.querySelectorAll('tbody tr'));
+                    return rows.map(r => {
+                        const cells = Array.from(r.querySelectorAll('td'));
+                        const obj = {};
+                        cells.forEach((c, i) => {
+                            const key = headers[i];
+                            const val = c.textContent.trim();
+                            // convert Age and ID to numbers when appropriate
+                            if (key === 'Age' || key === 'ID') obj[key] = Number(val);
+                            else obj[key] = val;
+                        });
+                        return obj;
+                    });
+                }
+
+                function groupAndAggregate(data, groupKeys, agg) {
+                    // Use a Map keyed by JSON of group values
+                    const map = new Map();
+                    data.forEach(row => {
+                        const keyObj = {};
+                        groupKeys.forEach(k => keyObj[k] = row[k]);
+                        const key = JSON.stringify(keyObj);
+                        if (!map.has(key)) map.set(key, []);
+                        map.get(key).push(row);
+                    });
+
+                    const result = [];
+                    for (const [key, rows] of map.entries()) {
+                        const keyObj = JSON.parse(key);
+                        const record = {...keyObj};
+                        if (agg === 'count') record['count'] = rows.length;
+                        else if (agg === 'mean') {
+                            const ages = rows.map(r => r['Age']).filter(v => !isNaN(v));
+                            const mean = ages.length ? (ages.reduce((a,b)=>a+b,0)/ages.length) : null;
+                            record['mean_age'] = mean === null ? '' : Number(mean.toFixed(2));
+                        }
+                        result.push(record);
+                    }
+                    return result;
+                }
+
+                function renderResultTable(rows) {
+                    const wrap = document.getElementById('dist-table-wrap');
+                    wrap.innerHTML = '';
+                    if (!rows.length) { wrap.textContent = 'No results'; return; }
+                    const table = document.createElement('table');
+                    table.style.marginTop = '0.5rem';
+                    const thead = document.createElement('thead');
+                    const headerRow = document.createElement('tr');
+                    Object.keys(rows[0]).forEach(k => {
+                        const th = document.createElement('th'); th.textContent = k; headerRow.appendChild(th);
+                    });
+                    thead.appendChild(headerRow);
+                    table.appendChild(thead);
+                    const tbody = document.createElement('tbody');
+                    rows.forEach(r => {
+                        const tr = document.createElement('tr');
+                        Object.values(r).forEach(v => { const td = document.createElement('td'); td.textContent = v; tr.appendChild(td); });
+                        tbody.appendChild(tr);
+                    });
+                    table.appendChild(tbody);
+                    wrap.appendChild(table);
+                }
+
+                function generateSQL(groupKeys, agg) {
+                    const cols = groupKeys.map(k => `\"${k}\"`).join(', ');
+                    if (agg === 'count') {
+                        return `SELECT ${cols}, COUNT(*) AS count\nFROM people\nGROUP BY ${cols};`;
+                    } else if (agg === 'mean') {
+                        return `SELECT ${cols}, AVG(Age) AS mean_age\nFROM people\nGROUP BY ${cols};`;
+                    }
+                    return '';
+                }
+
+                // pandas generation removed per request
+
+                document.getElementById('dist-form').addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const form = e.target;
+                    const formData = new FormData(form);
+                    const groupKeys = formData.getAll('vars');
+                    const agg = formData.get('agg');
+                    // read data
+                    const data = readSampleTable();
+                    // compute
+                    const result = groupAndAggregate(data, groupKeys, agg);
+                    // render
+                    renderResultTable(result);
+                    // queries
+                    document.getElementById('sql-query').textContent = generateSQL(groupKeys, agg);
+                    // clear pandas area if present
+                    const pandasEl = document.getElementById('pandas-query');
+                    if (pandasEl) pandasEl.remove();
+                });
+
+                // Optionally run once on load to show a default distribution
+                window.addEventListener('load', () => {
+                    const evt = new Event('submit');
+                    document.getElementById('dist-form').dispatchEvent(evt);
+                });
+
+                // ---------- Text / PDF letter-frequency analysis ----------
+                function letterFrequencies(text) {
+                    const counts = {};
+                    const A = 'A'.charCodeAt(0);
+                    for (let i = 0; i < 26; i++) counts[String.fromCharCode(A + i)] = 0;
+                    for (const ch of text.toUpperCase()) {
+                        const code = ch.charCodeAt(0);
+                        if (code >= A && code < A + 26) counts[ch]++;
+                    }
+                    return counts;
+                }
+
+                function renderBarChart(counts, containerId='letter-chart') {
+                    const container = document.getElementById(containerId);
+                    container.innerHTML = '';
+                    const entries = Object.entries(counts);
+                    const max = Math.max(...entries.map(e=>e[1]), 1);
+                    const svgNS = 'http://www.w3.org/2000/svg';
+                    const width = container.clientWidth || 800;
+                    const height = 240;
+                    const svg = document.createElementNS(svgNS, 'svg');
+                    // make SVG responsive: set viewBox and width:100%
+                    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+                    svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+                    svg.setAttribute('width', '100%');
+                    // do not set a fixed height attribute; let CSS and viewBox control scaling
+                    const barWidth = width / entries.length;
+                    // choose a bar fill color based on which chart container we're rendering into
+                    const colors = {
+                        'letter-chart': '#7ec8ff', // celestino (light blue)
+                        'italian-chart': '#7bd48b', // verdino (green)
+                        'cipher-chart': '#b58bff'   // violetto (purple)
+                    };
+                    const fillColor = colors[containerId] || '#ffeb3b';
+
+                    entries.forEach(([,v], i) => {
+                        const x = i * barWidth;
+                        const h = (v / max) * (height - 40);
+                        const y = height - h - 20;
+                        const rect = document.createElementNS(svgNS, 'rect');
+                        rect.setAttribute('x', x + 6);
+                        rect.setAttribute('y', y);
+                        rect.setAttribute('width', Math.max(12, barWidth - 12));
+                        rect.setAttribute('height', h);
+                        rect.setAttribute('fill', fillColor);
+                        svg.appendChild(rect);
+
+                        const label = document.createElementNS(svgNS, 'text');
+                        label.setAttribute('x', x + barWidth/2);
+                        label.setAttribute('y', height - 4);
+                        label.setAttribute('fill', '#ffffff');
+                        label.setAttribute('font-size', '12');
+                        label.setAttribute('text-anchor', 'middle');
+                        const letter = document.createTextNode(entries[i][0]);
+                        label.appendChild(letter);
+                        svg.appendChild(label);
+
+                        const valText = document.createElementNS(svgNS, 'text');
+                        valText.setAttribute('x', x + barWidth/2);
+                        valText.setAttribute('y', y - 6);
+                        valText.setAttribute('fill', '#ffffff');
+                        valText.setAttribute('font-size', '11');
+                        valText.setAttribute('text-anchor', 'middle');
+                        valText.textContent = String(v);
+                        svg.appendChild(valText);
+                    });
+                    container.appendChild(svg);
+                }
+
+                // Try to read file; for .txt use text, for .pdf attempt naive extraction
+                function readFileAsText(file) {
+                    return new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result);
+                        reader.onerror = () => reject(reader.error);
+                        // For PDF, we'll read as ArrayBuffer and try to decode to text; mostly fallback
+                        if (file.name.toLowerCase().endsWith('.pdf')) reader.readAsArrayBuffer(file);
+                        else reader.readAsText(file);
+                    });
+                }
+
+                // Italian letter frequency reference (approximate percentages for A-Z)
+                const italianFreq = {
+                    A: 11.7, B: 0.9, C: 4.5, D: 3.7, E: 11.7, F: 1.1, G: 1.6, H: 0.6, I: 10.1, J: 0.01, K: 0.01, L: 6.5, M: 2.5, N: 6.8, O: 9.8, P: 3, Q: 0.5, R: 6.3, S: 4.9, T: 5.6, U: 3, V: 2, W: 0.03, X: 0.01, Y: 0.02, Z: 1.1
+                };
+
+                function normalizeFreqs(freqs) {
+                    const values = Object.values(freqs);
+                    const total = values.reduce((a,b)=>a+b,0) || 1;
+                    const out = {};
+                    Object.keys(freqs).forEach(k => out[k] = freqs[k] / total);
+                    return out;
+                }
+
+                function rotateFreqs(freqs, shift) {
+                    // rotate letter frequencies by shift positions; shift can be negative
+                    const A = 'A'.charCodeAt(0);
+                    const out = {};
+                    for (let i=0;i<26;i++) out[String.fromCharCode(A+i)] = 0;
+                    Object.keys(freqs).forEach(k => {
+                        const idx = k.charCodeAt(0) - A;
+                        // handle negative shift properly
+                        const newIdx = (idx + shift + 26) % 26;
+                        out[String.fromCharCode(A + newIdx)] = freqs[k];
+                    });
+                    return out;
+                }
+
+                function distanceChiSquare(observed, expected) {
+                    // Chi-square-like distance: sum (obs - exp)^2 / (exp + eps)
+                    const eps = 1e-6;
+                    let sum = 0;
+                    Object.keys(expected).forEach(k => {
+                        const o = observed[k] || 0;
+                        const e = expected[k] || 0;
+                        sum += Math.pow(o - e, 2) / (e + eps);
+                    });
+                    return sum;
+                }
+
+                function guessShiftByFrequency(cipherFreqsRaw, referenceFreqRaw) {
+                    // normalize both
+                    const cipherNorm = normalizeFreqs(cipherFreqsRaw);
+                    const refRaw = {};
+                    Object.keys(referenceFreqRaw).forEach(k => refRaw[k] = referenceFreqRaw[k]);
+                    const refNorm = normalizeFreqs(refRaw);
+                    let best = 0; let bestScore = Infinity;
+                    // Try decrypt shifts (we expect cipher = plaintext shifted by S, so decrypt by -S)
+                    for (let s=0;s<26;s++) {
+                        const rotated = rotateFreqs(cipherNorm, -s);
+                        const score = distanceChiSquare(rotated, refNorm);
+                        if (score < bestScore) { bestScore = score; best = s; }
+                    }
+                    return best;
+                }
+
+                // Build candidate shift list sorted by distance (best first)
+                function candidateShiftsByDistance(cipherFreqsRaw, referenceFreqRaw) {
+                    const cipherNorm = normalizeFreqs(cipherFreqsRaw);
+                    const refNorm = normalizeFreqs(referenceFreqRaw);
+                    const candidates = [];
+                    for (let s=0;s<26;s++) {
+                        // interpret s as decrypt shift
+                        const rotated = rotateFreqs(cipherNorm, -s);
+                        const score = distanceChiSquare(rotated, refNorm);
+                        candidates.push({shift: s, score});
+                    }
+                    candidates.sort((a,b)=>a.score - b.score);
+                    return candidates.map(c=>c.shift);
+                }
+
+                function applyCandidateShiftList(cipherText, candidates, index) {
+                    if (!candidates || !candidates.length) return;
+                    const shift = candidates[index % candidates.length];
+                    document.getElementById('guessed-shift').textContent = shift;
+                    document.getElementById('candidate-pos').textContent = ` (candidate ${index+1} of ${candidates.length})`;
+                    const decryptedAttempt = caesarEncrypt(cipherText, 26 - shift);
+                    document.getElementById('decrypted-output').textContent = decryptedAttempt;
+                    // render ciphertext frequency distribution in the cipher-chart
+                    const cipherFreqs = letterFrequencies(cipherText);
+                    renderBarChart(cipherFreqs, 'cipher-chart');
+                    // store current index
+                    window._candidateIndex = index;
+                    window._currentCandidates = candidates;
+                    window._cipherText = cipherText;
+                }
+
+                document.getElementById('next-guess-btn').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const candidates = window._currentCandidates || [];
+                    if (!candidates.length) { alert('No candidates available yet. Run analyze first.'); return; }
+                    const nextIndex = ((window._candidateIndex || 0) + 1) % candidates.length;
+                    applyCandidateShiftList(window._cipherText, candidates, nextIndex);
+                });
+
+                
+
+                async function handleFile(file) {
+                    try {
+                        const raw = await readFileAsText(file);
+                        if (file.name.toLowerCase().endsWith('.pdf')) {
+                            // Attempt a very naive extraction: convert ArrayBuffer to string and remove binary
+                            let text = '';
+                            try {
+                                const bytes = new Uint8Array(raw);
+                                // Convert to string; many PDFs will be binary - this is best-effort
+                                const chunk = String.fromCharCode.apply(null, bytes.subarray(0, Math.min(10000, bytes.length)));
+                                // Try to find readable chunks
+                                const matches = chunk.match(/[\x20-\x7E\n\r]{5,}/g);
+                                if (matches) text = matches.join('\n');
+                                else text = '';
+                            } catch (err) {
+                                text = '';
+                            }
+                            return text;
+                        } else {
+                            return raw;
+                        }
+                    } catch (err) {
+                        return '';
+                    }
+                }
+
+                document.getElementById('analyze-text').addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    const fileInput = document.getElementById('file-input');
+                    const textArea = document.getElementById('text-input');
+                    let text = textArea.value || '';
+                    if (fileInput.files && fileInput.files.length) {
+                        const file = fileInput.files[0];
+                        const extracted = await handleFile(file);
+                        if (extracted && extracted.trim().length > 0) text = (text + '\n' + extracted).trim();
+                        else alert('PDF text extraction failed or returned no readable text. Try copying the text into the box.');
+                    }
+                    if (!text || !text.trim()) { alert('No text provided'); return; }
+                    const freqs = letterFrequencies(text);
+                    // render plaintext (original message) frequency distribution
+                    renderBarChart(freqs, 'letter-chart');
+                    // render Italian reference distribution above the cipher distribution
+                    renderBarChart(italianFreq, 'italian-chart');
+                    // Auto-encrypt the analyzed text using current shift
+                    const shift = Number(document.getElementById('caesar-shift').value) || 0;
+                    const cipher = caesarEncrypt(text, shift);
+                    document.getElementById('encrypted-output').textContent = cipher;
+
+                    // Attempt frequency-based decryption comparing to Italian distribution
+                    const cipherFreqs = letterFrequencies(cipher);
+                    // show cipher distribution (below the Italian chart)
+                    renderBarChart(cipherFreqs, 'cipher-chart');
+                    const candidates = candidateShiftsByDistance(cipherFreqs, italianFreq);
+                    // apply top candidate (this will also update decrypted output)
+                    applyCandidateShiftList(cipher, candidates, 0);
+                });
+
+                // Caesar cipher implementation
+                function caesarEncrypt(text, shift) {
+                    const aCode = 'a'.charCodeAt(0);
+                    const ACode = 'A'.charCodeAt(0);
+                    shift = ((shift % 26) + 26) % 26;
+                    let out = '';
+                    for (let i = 0; i < text.length; i++) {
+                        const ch = text[i];
+                        const code = ch.charCodeAt(0);
+                        if (code >= ACode && code < ACode + 26) {
+                            out += String.fromCharCode(((code - ACode + shift) % 26) + ACode);
+                        } else if (code >= aCode && code < aCode + 26) {
+                            out += String.fromCharCode(((code - aCode + shift) % 26) + aCode);
+                        } else {
+                            out += ch;
+                        }
+                    }
+                    return out;
+                }
+
+                document.getElementById('encrypt-btn').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const shift = Number(document.getElementById('caesar-shift').value) || 0;
+                    const text = document.getElementById('text-input').value || '';
+                    if (!text.trim()) { alert('No text in textarea to encrypt'); return; }
+                    const cipher = caesarEncrypt(text, shift);
+                    document.getElementById('encrypted-output').textContent = cipher;
+                });
+            </script>
+
             <!-- From Uiverse.io by mobinkakei --> 
              <div class="nav-buttons">
              <a href="first_homework.html">

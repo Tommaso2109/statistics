@@ -119,10 +119,15 @@ body {
     }
 
     .header-home-btn{
-      min-width: 220px;
+      min-width: 80px; /* allow header button to shrink on small screens */
       display: flex;
       align-items: center;
       justify-content: center;
+    }
+
+    .profile-photo img {
+      width: 120px;
+      height: 120px;
     }
 
 
@@ -135,12 +140,18 @@ h1 {
     letter-spacing: 1px;
 }
 main {
-    max-width: 600px;
-    margin: 2rem auto;
-    background: #fc7575;
-    border-radius: 18px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
-    padding: 2rem;
+  max-width: 600px; /* restored original section width */
+  margin: 2rem auto;
+  background: #fc7575;
+  border-radius: 18px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+  padding: 2rem;
+}
+/* Prevent page-level horizontal overflow caused by long content */
+main, body, html {
+  box-sizing: border-box;
+  /* prevent page-level horizontal scrolling; inner elements can scroll as needed */
+  overflow-x: hidden;
 }
 
 main p{
@@ -162,9 +173,62 @@ main li:hover {
     background: transparent;
 }
 
-h2 {
+h2, h3, h4 {
     color: #ffffff;
     margin-top: 0;
+    margin-bottom: 10px;
+}
+
+label{
+    color: #ffffff;
+    font-weight: 600;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+  color: #ffffff; /* table text white */
+  background: rgba(0, 0, 0, 0.12); /* subtle dark background for contrast */
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+table caption {
+  color: #ffffff;
+  caption-side: top;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+table th,
+table td {
+  padding: 0.6rem 0.75rem;
+  text-align: left;
+  color: #ffffff; /* ensure white in both header and cells */
+}
+
+table thead th {
+  background: rgba(0, 0, 0, 0.2);
+  font-weight: 700;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+table tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+@media (max-width: 480px) {
+  table th, table td {
+    padding: 0.5rem 0.4rem;
+    font-size: 0.95rem;
+  }
 }
 
 ul {
@@ -317,3 +381,87 @@ a:hover {
     display: inline-block;
     vertical-align: middle;
 }
+
+/* Responsive chart containers */
+#cipher-chart, #letter-chart, #italian-chart {
+  width: 100%;
+  /* allow internal scrolling instead of page scrolling */
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+#cipher-chart svg, #letter-chart svg, #italian-chart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* On desktop and larger viewports make charts taller so they look more prominent */
+@media (min-width: 800px) {
+  #cipher-chart { margin-top: 0.5rem; }
+  #cipher-chart svg { min-height: 380px; height: 38vw; max-height: 520px; }
+  #letter-chart svg { min-height: 320px; height: 32vw; max-height: 440px; }
+}
+
+@media (max-width: 480px) {
+  #cipher-chart, #letter-chart, #italian-chart {
+    max-height: 360px;
+  }
+  #cipher-chart svg, #letter-chart svg, #italian-chart svg {
+    max-height: 360px;
+  }
+}
+
+/* On very small screens allow the whole page to scroll horizontally if needed
+   and make chart svgs wider so the user can swipe horizontally to inspect them */
+@media (max-width: 420px) {
+  html, body, main {
+    overflow-x: auto; /* allow horizontal scroll on the page */
+  }
+
+  /* Make charts wider than the viewport so they become horizontally scrollable */
+  #cipher-chart svg, #letter-chart svg, #italian-chart svg {
+    min-width: 900px;
+    width: auto; /* avoid forcing 100% width which would shrink them */
+    height: 220px; /* keep reasonable vertical size */
+  }
+
+  /* ensure containers still allow internal scroll */
+  #cipher-chart, #letter-chart, #italian-chart {
+    overflow-x: auto;
+  }
+}
+
+/* Prevent long pre blocks from overflowing: allow wrapping and scrolling on very small screens */
+pre, pre[id$="-output"] {
+  white-space: pre-wrap;       /* wrap long lines */
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+  /* aggressive breaking for long uninterrupted strings */
+  word-break: break-all;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* On very narrow screens allow horizontal scroll inside pre if needed */
+@media (max-width: 420px) {
+  pre {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* also ensure chart containers won't force body horizontal scroll */
+#cipher-chart, #letter-chart, #italian-chart {
+  box-sizing: border-box;
+}
+
+/* Specific rule: ensure encrypted/decrypted output boxes break long strings */
+#encrypted-output, #decrypted-output, #sql-query {
+  /* Force breaking of long uninterrupted strings (like long ciphertext) */
+  word-break: break-all;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  max-width: 100%;
+}
+
