@@ -344,6 +344,10 @@ a:hover {
   animation: color_anim 1s infinite 0.4s;
 }
 
+legend{
+    color: #ffffff;
+    }
+
 @keyframes color_anim {
   0% {
     fill: white;
