@@ -468,3 +468,10 @@ pre, pre[id$="-output"] {
   max-width: 100%;
 }
 
+/* Make all text inside the interactive distribution fieldset white
+   (covers legend, labels, button text, selects, and any inline text) */
+#interactive-distribution fieldset,
+#interactive-distribution fieldset * {
+  color: #ffffff !important;
+}
+
