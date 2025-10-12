@@ -27,7 +27,7 @@
                             width="24" 
                             height="24" 
                             fill="black">
-                        <path d="M12 3l10 8h-3v9a1 1 0 0 1-1 1h-5v-6H11v6H6a1 1 0 0 1-1-1v-9H2l">
+                        <path d="M12 3l10 8h-3v9a1 1 0 0 1-1 1h-5v-6H11v6H6a1 1 0 0 1-1-1v-9H2l"></path>
 
                         </svg>
                         
@@ -141,6 +141,7 @@
                     <button id="analyze-text">Analyze text / file</button>
 
                 </div>
+                <!-- debug area removed -->
 
                 <div id="letter-chart" style="margin-top:1rem;"></div>
                     
@@ -148,11 +149,11 @@
                     <div id="caesar-ui" style="margin-top:1.25rem;padding-top:0.75rem;border-top:1px solid rgba(255,255,255,0.06);">
                         <h4>Caesar cipher</h4>
                         <p style="color:#fff;opacity:0.9;">The Caesar cipher is a simple substitution cipher that shifts each letter by a fixed number of positions (the shift). For example, with shift 3, A → D, B → E, etc. It preserves letter case and leaves non-letter characters unchanged.</p>
-                        <label for="caesar-shift">Shift (0-25): </label>
-                        <input id="caesar-shift" type="number" min="0" max="25" value="3" style="width:70px;">
+                        <p style="margin:0 0 0.5rem 0;color:#fff;opacity:0.95;">Shift: generated randomly for each encryption (1–25) — never 0.</p>
                         <div style="margin-top:0.75rem;">
                             <label>Encrypted message:</label>
                             <pre id="encrypted-output" style="white-space:pre-wrap;color:#fff;background:rgba(0,0,0,0.12);padding:0.5rem;border-radius:6px;min-height:2rem;"></pre>
+                            <div style="color:#fff;opacity:0.9;margin-top:0.35rem;"> <span id="used-shift">Used shift: —</span></div>
                         </div>
 
                     </div>
@@ -451,13 +452,17 @@
                     window._cipherText = cipherText;
                 }
 
-                document.getElementById('next-guess-btn').addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const candidates = window._currentCandidates || [];
-                    if (!candidates.length) { alert('No candidates available yet. Run analyze first.'); return; }
-                    const nextIndex = ((window._candidateIndex || 0) + 1) % candidates.length;
-                    applyCandidateShiftList(window._cipherText, candidates, nextIndex);
-                });
+                // Guarded next-guess button: attach listener only if element exists
+                const nextGuessBtn = document.getElementById('next-guess-btn');
+                if (nextGuessBtn) {
+                    nextGuessBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const candidates = window._currentCandidates || [];
+                        if (!candidates.length) { alert('No candidates available yet. Run analyze first.'); return; }
+                        const nextIndex = ((window._candidateIndex || 0) + 1) % candidates.length;
+                        applyCandidateShiftList(window._cipherText, candidates, nextIndex);
+                    });
+                }
 
                 
 
@@ -465,21 +470,54 @@
                     try {
                         const raw = await readFileAsText(file);
                         if (file.name.toLowerCase().endsWith('.pdf')) {
-                            // Attempt a very naive extraction: convert ArrayBuffer to string and remove binary
+                            // raw will be an ArrayBuffer for PDFs
+                            // Try extracting with pdf.js first (more robust)
+                            const extracted = await extractPdfText(raw);
+                            if (extracted && extracted.trim().length > 0) {
+                                // mark method for debugging
+                                window._lastPdfExtractionMethod = 'pdfjs';
+                                return extracted;
+                            }
+                            // fallback: naive extraction of printable chunks
                             let text = '';
                             try {
                                 const bytes = new Uint8Array(raw);
-                                // Convert to string; many PDFs will be binary - this is best-effort
-                                const chunk = String.fromCharCode.apply(null, bytes.subarray(0, Math.min(10000, bytes.length)));
-                                // Try to find readable chunks
+                                // try decode whole buffer as UTF-8 first
+                                let chunk = '';
+                                try {
+                                    // TextDecoder available in modern browsers
+                                    const td = new TextDecoder('utf-8');
+                                    chunk = td.decode(bytes);
+                                } catch (e) {
+                                    chunk = String.fromCharCode.apply(null, bytes.subarray(0, Math.min(20000, bytes.length)));
+                                }
                                 const matches = chunk.match(/[\x20-\x7E\n\r]{5,}/g);
-                                if (matches) text = matches.join('\n');
-                                else text = '';
+                                if (matches) {
+                                    const candidate = matches.join('\n');
+                                    // If the candidate contains PDF structural markers, it's probably raw PDF content -> ignore
+                                    const head = candidate.slice(0, 2000);
+                                    const pdfIndicators = ['%PDF-', 'endobj', '/Type /Catalog', '/Pages', '/Font', 'xref'];
+                                    const looksLikePdf = pdfIndicators.some(ind => head.indexOf(ind) !== -1);
+                                    if (looksLikePdf) {
+                                        console.warn('Fallback extraction looks like raw PDF structure; ignoring fallback.');
+                                        text = '';
+                                        window._lastPdfExtractionMethod = 'fallback-raw';
+                                    } else {
+                                        text = candidate;
+                                        window._lastPdfExtractionMethod = 'fallback-text';
+                                    }
+                                } else {
+                                    text = '';
+                                    window._lastPdfExtractionMethod = 'fallback-empty';
+                                }
                             } catch (err) {
                                 text = '';
+                                window._lastPdfExtractionMethod = 'fallback-error';
                             }
                             return text;
                         } else {
+                            // plain text file
+                            window._lastPdfExtractionMethod = 'text-file';
                             return raw;
                         }
                     } catch (err) {
@@ -495,19 +533,23 @@
                     if (fileInput.files && fileInput.files.length) {
                         const file = fileInput.files[0];
                         const extracted = await handleFile(file);
+                        // debug output removed
                         if (extracted && extracted.trim().length > 0) text = (text + '\n' + extracted).trim();
                         else alert('PDF text extraction failed or returned no readable text. Try copying the text into the box.');
                     }
                     if (!text || !text.trim()) { alert('No text provided'); return; }
-                    const freqs = letterFrequencies(text);
+                    // Clean text: remove digits and punctuation, keep letters and spaces
+                    const cleaned = cleanText(text);
+                    const freqs = letterFrequencies(cleaned);
                     // render plaintext (original message) frequency distribution
                     renderBarChart(freqs, 'letter-chart');
                     // render Italian reference distribution above the cipher distribution
                     renderBarChart(italianFreq, 'italian-chart');
-                    // Auto-encrypt the analyzed text using current shift
-                    const shift = Number(document.getElementById('caesar-shift').value) || 0;
-                    const cipher = caesarEncrypt(text, shift);
+                    // Auto-encrypt the analyzed text using a random shift (1-25)
+                    const shift = Math.floor(Math.random() * 25) + 1;
+                    const cipher = caesarEncrypt(cleaned, shift);
                     document.getElementById('encrypted-output').textContent = cipher;
+                    const usedEl = document.getElementById('used-shift'); if (usedEl) usedEl.textContent = 'Used shift: ' + shift;
 
                     // Attempt frequency-based decryption comparing to Italian distribution
                     const cipherFreqs = letterFrequencies(cipher);
@@ -517,6 +559,12 @@
                     // apply top candidate (this will also update decrypted output)
                     applyCandidateShiftList(cipher, candidates, 0);
                 });
+
+                // Utility: remove digits only, keep punctuation and spaces
+                function cleanText(input) {
+                    // Remove digits (0-9) but leave letters, punctuation, and whitespace intact
+                    return input.replace(/\d/g, '');
+                }
 
                 // Caesar cipher implementation
                 function caesarEncrypt(text, shift) {
@@ -537,15 +585,98 @@
                     }
                     return out;
                 }
+                // Guarded encrypt button: some pages may not have an encrypt button; attach only if present
+                const encryptBtn = document.getElementById('encrypt-btn');
+                if (encryptBtn) {
+                    encryptBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const shift = Math.floor(Math.random() * 25) + 1;
+                        const text = document.getElementById('text-input').value || '';
+                        if (!text.trim()) { alert('No text in textarea to encrypt'); return; }
+                        const cleanedText = cleanText(text);
+                        const cipher = caesarEncrypt(cleanedText, shift);
+                        document.getElementById('encrypted-output').textContent = cipher;
+                        const usedEl = document.getElementById('used-shift'); if (usedEl) usedEl.textContent = 'Used shift: ' + shift;
+                    });
+                }
+            </script>
 
-                document.getElementById('encrypt-btn').addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const shift = Number(document.getElementById('caesar-shift').value) || 0;
-                    const text = document.getElementById('text-input').value || '';
-                    if (!text.trim()) { alert('No text in textarea to encrypt'); return; }
-                    const cipher = caesarEncrypt(text, shift);
-                    document.getElementById('encrypted-output').textContent = cipher;
-                });
+            <!-- pdf.js loading + extraction (robust) -->
+            <script>
+                // URL versions used for dynamic loading
+                const PDFJS_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js';
+                const PDFJS_WORKER_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+                // Dynamically load pdf.js if it's not already present
+                function loadPdfJs() {
+                    return new Promise((resolve, reject) => {
+                        if (window.pdfjsLib || window['pdfjsLib'] || window['pdfjs-dist/build/pdf']) {
+                            resolve(window.pdfjsLib || window['pdfjs-dist/build/pdf']);
+                            return;
+                        }
+                        const s = document.createElement('script');
+                        s.src = PDFJS_CDN;
+                        s.async = true;
+                        s.onload = () => {
+                            const lib = window.pdfjsLib || window['pdfjs-dist/build/pdf'];
+                            if (lib) {
+                                lib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_CDN;
+                                resolve(lib);
+                            } else {
+                                reject(new Error('pdfjs loaded but global not found'));
+                            }
+                        };
+                        s.onerror = (e) => reject(new Error('Failed to load pdf.js from CDN'));
+                        document.head.appendChild(s);
+                        // safety timeout
+                        setTimeout(() => {
+                            if (!(window.pdfjsLib || window['pdfjs-dist/build/pdf'])) reject(new Error('pdf.js load timeout'));
+                        }, 8000);
+                    });
+                }
+
+                // extract text content from a PDF ArrayBuffer using pdf.js; will try to load pdf.js if needed
+                async function extractPdfText(arrayBuffer) {
+                    try {
+                        let pdfjsLib = window.pdfjsLib || window['pdfjs-dist/build/pdf'];
+                        if (!pdfjsLib) {
+                            try {
+                                pdfjsLib = await loadPdfJs();
+                            } catch (err) {
+                                console.warn('Could not load pdf.js:', err);
+                                return '';
+                            }
+                        }
+                        // Ensure worker src is set
+                        try {
+                            pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_CDN;
+                        } catch (e) {
+                            // ignore
+                        }
+
+                        // Some environments (file://) block loading the worker; disable worker to run in main thread
+                        const loadingTask = pdfjsLib.getDocument({data: arrayBuffer, disableWorker: true});
+                        const pdf = await loadingTask.promise;
+                        let fullText = '';
+                        const pageInfos = [];
+                        for (let i = 1; i <= pdf.numPages; i++) {
+                            const page = await pdf.getPage(i);
+                            const content = await page.getTextContent();
+                            const items = content.items || [];
+                            const strings = items.map(item => item.str || '').join(' ');
+                            const cleaned = strings.replace(/\s+/g, ' ').trim();
+                            fullText += cleaned + '\n\n';
+                            pageInfos.push({page: i, items: items.length, preview: cleaned.slice(0, 300)});
+                        }
+                        // final trim
+                        fullText = fullText.trim();
+                        // debug data removed
+                        return fullText;
+                    } catch (err) {
+                        console.warn('pdf.js extraction failed:', err);
+                        return '';
+                    }
+                }
             </script>
 
             <!-- From Uiverse.io by mobinkakei --> 
@@ -621,3 +752,5 @@
         <script src="menu.js"></script>
     </body>
 </html>
+
+
