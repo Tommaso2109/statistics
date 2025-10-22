@@ -41,9 +41,434 @@
         </header>
         <main>
             <section>
-                <h2>has not yet been assigned</h2>
+                <h2>Law of Large Numbers (LLN) Simulation</h2>
+                
+                <div class="description-box">
+                    <h3>What is the Law of Large Numbers?</h3>
+                    <p>
+                        The <strong>Law of Large Numbers</strong> (LLN) is a fundamental theorem in probability theory 
+                        that describes the result of performing the same experiment a large number of times. 
+                        According to the LLN, the average of the results obtained from a large number of trials 
+                        should be close to the expected value and tends to become closer to the expected value 
+                        as more trials are performed.
+                    </p>
+                    <p>
+                        <strong>Mathematical formulation:</strong> For a sequence of independent and identically distributed 
+                        random variables <em>X₁, X₂, ..., Xₙ</em> with expected value <em>μ</em>, the sample average 
+                        <em>f(n) = (X₁ + X₂ + ... + Xₙ) / n</em> converges to <em>μ</em> as <em>n → ∞</em>.
+                    </p>
+                    <p>
+                        In this simulation, we perform <strong>m</strong> independent trajectories of <strong>n</strong> trials each, 
+                        where each trial is a Bernoulli experiment with success probability <strong>p</strong>. 
+                        As <em>n</em> increases, you'll observe that:
+                    </p>
+                    <ul>
+                        <li>The relative frequency <em>f(n)</em> in each trajectory converges to <em>p</em></li>
+                        <li>The distribution of <em>f(n)</em> across all trajectories becomes more concentrated around <em>p</em></li>
+                        <li>The histogram below shows this convergence visually</li>
+                    </ul>
+                </div>
+
+                <div class="controls">
+                    <fieldset>
+                        <legend>Simulation Parameters</legend>
+                        <div class="control-group">
+                            <label for="prob-success">Probability of Success (p):</label>
+                            <input type="range" id="prob-success" min="0.1" max="0.9" step="0.05" value="0.5">
+                            <span id="prob-value">0.50</span>
+                        </div>
+                        <div class="control-group">
+                            <label for="num-trajectories">Number of Trajectories (m):</label>
+                            <input type="range" id="num-trajectories" min="10" max="200" step="10" value="50">
+                            <span id="traj-value">50</span>
+                        </div>
+                        <div class="control-group">
+                            <label for="num-trials">Number of Trials (n):</label>
+                            <input type="range" id="num-trials" min="50" max="2000" step="50" value="500">
+                            <span id="trials-value">500</span>
+                        </div>
+                        <div class="control-group">
+                            <label for="animation-speed">Animation Speed:</label>
+                            <input type="range" id="animation-speed" min="1" max="100" step="1" value="20">
+                            <span id="speed-value">20</span>
+                        </div>
+                        <button id="start-simulation" class="sim-button">Start Simulation</button>
+                        <button id="stop-simulation" class="sim-button">Stop</button>
+                        <button id="reset-simulation" class="sim-button">Reset</button>
+                    </fieldset>
+                </div>
+
+                <div class="visualization-container">
+                    <div class="main-chart-container">
+                        <canvas id="trajectories-canvas"></canvas>
+                    </div>
+                    <div class="histogram-container">
+                        <canvas id="histogram-canvas"></canvas>
+                    </div>
+                </div>
+
+                <div class="stats-display">
+                    <div class="stat-box">
+                        <h4>Current Step</h4>
+                        <p id="current-step">0</p>
+                    </div>
+                    <div class="stat-box">
+                        <h4>Mean f(n)</h4>
+                        <p id="mean-fn">-</p>
+                    </div>
+                    <div class="stat-box">
+                        <h4>Std Dev f(n)</h4>
+                        <p id="std-fn">-</p>
+                    </div>
+                    <div class="stat-box">
+                        <h4>Theoretical Std Dev</h4>
+                        <p id="theoretical-std">-</p>
+                    </div>
+                </div>
                     
             </section>
+
+            <script>
+                // ========== SIMULATION VARIABLES ==========
+                let trajectories = [];
+                let p = 0.5;
+                let m = 50;
+                let n = 500;
+                let currentStep = 0;
+                let animationSpeed = 20;
+                let isRunning = false;
+                let animationId = null;
+
+                // Canvas elements
+                const trajCanvas = document.getElementById('trajectories-canvas');
+                const histCanvas = document.getElementById('histogram-canvas');
+                const trajCtx = trajCanvas.getContext('2d');
+                const histCtx = histCanvas.getContext('2d');
+
+                // Set canvas sizes
+                function resizeCanvases() {
+                    trajCanvas.width = trajCanvas.offsetWidth;
+                    trajCanvas.height = trajCanvas.offsetHeight;
+                    histCanvas.width = histCanvas.offsetWidth;
+                    histCanvas.height = histCanvas.offsetHeight;
+                }
+                resizeCanvases();
+                window.addEventListener('resize', () => {
+                    resizeCanvases();
+                    drawVisualization();
+                });
+
+                // ========== CONTROL HANDLERS ==========
+                document.getElementById('prob-success').addEventListener('input', (e) => {
+                    p = parseFloat(e.target.value);
+                    document.getElementById('prob-value').textContent = p.toFixed(2);
+                    updateTheoreticalStd();
+                });
+
+                document.getElementById('num-trajectories').addEventListener('input', (e) => {
+                    m = parseInt(e.target.value);
+                    document.getElementById('traj-value').textContent = m;
+                });
+
+                document.getElementById('num-trials').addEventListener('input', (e) => {
+                    n = parseInt(e.target.value);
+                    document.getElementById('trials-value').textContent = n;
+                    updateTheoreticalStd();
+                });
+
+                document.getElementById('animation-speed').addEventListener('input', (e) => {
+                    animationSpeed = parseInt(e.target.value);
+                    document.getElementById('speed-value').textContent = animationSpeed;
+                });
+
+                document.getElementById('start-simulation').addEventListener('click', startSimulation);
+                document.getElementById('stop-simulation').addEventListener('click', stopSimulation);
+                document.getElementById('reset-simulation').addEventListener('click', resetSimulation);
+
+                // ========== SIMULATION LOGIC ==========
+                function initializeTrajectories() {
+                    trajectories = [];
+                    for (let i = 0; i < m; i++) {
+                        trajectories.push({
+                            successes: 0,
+                            frequencies: [0],
+                            color: `hsl(${(i * 360) / m}, 70%, 60%)`
+                        });
+                    }
+                    currentStep = 0;
+                }
+
+                function performTrials(numSteps) {
+                    for (let step = 0; step < numSteps; step++) {
+                        currentStep++;
+                        for (let i = 0; i < m; i++) {
+                            // Perform one Bernoulli trial
+                            const success = Math.random() < p ? 1 : 0;
+                            trajectories[i].successes += success;
+                            const frequency = trajectories[i].successes / currentStep;
+                            trajectories[i].frequencies.push(frequency);
+                        }
+                    }
+                }
+
+                function drawVisualization() {
+                    drawTrajectories();
+                    drawHistogram();
+                    updateStats();
+                }
+
+                function drawTrajectories() {
+                    const width = trajCanvas.width;
+                    const height = trajCanvas.height;
+                    const padding = 50;
+
+                    trajCtx.clearRect(0, 0, width, height);
+
+                    // Draw axes
+                    trajCtx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                    trajCtx.lineWidth = 2;
+                    trajCtx.beginPath();
+                    trajCtx.moveTo(padding, height - padding);
+                    trajCtx.lineTo(width - padding / 2, height - padding);
+                    trajCtx.moveTo(padding, height - padding);
+                    trajCtx.lineTo(padding, padding / 2);
+                    trajCtx.stroke();
+
+                    // Draw probability p line
+                    const pY = height - padding - (p * (height - padding * 1.5));
+                    trajCtx.strokeStyle = 'rgba(255, 0, 0, 0.8)';
+                    trajCtx.lineWidth = 2;
+                    trajCtx.setLineDash([5, 5]);
+                    trajCtx.beginPath();
+                    trajCtx.moveTo(padding, pY);
+                    trajCtx.lineTo(width - padding / 2, pY);
+                    trajCtx.stroke();
+                    trajCtx.setLineDash([]);
+
+                    // Draw p label
+                    trajCtx.fillStyle = '#ff4444';
+                    trajCtx.font = 'bold 14px Arial';
+                    trajCtx.textAlign = 'right';
+                    trajCtx.fillText(`p = ${p.toFixed(2)}`, width - padding / 2 - 10, pY - 5);
+
+                    // Draw trajectories
+                    const xScale = (width - padding * 1.5) / n;
+                    const yScale = height - padding * 1.5;
+
+                    for (let i = 0; i < m; i++) {
+                        const traj = trajectories[i];
+                        const alpha = m > 50 ? 0.3 : 0.6;
+                        trajCtx.strokeStyle = traj.color.replace(')', `, ${alpha})`).replace('hsl', 'hsla');
+                        trajCtx.lineWidth = 1;
+                        trajCtx.beginPath();
+
+                        for (let j = 0; j < traj.frequencies.length && j <= currentStep; j++) {
+                            const x = padding + j * xScale;
+                            const y = height - padding - (traj.frequencies[j] * yScale);
+                            if (j === 0) {
+                                trajCtx.moveTo(x, y);
+                            } else {
+                                trajCtx.lineTo(x, y);
+                            }
+                        }
+                        trajCtx.stroke();
+                    }
+
+                    // Draw axis labels
+                    trajCtx.fillStyle = 'white';
+                    trajCtx.font = '14px Arial';
+                    trajCtx.textAlign = 'center';
+                    trajCtx.fillText('Number of Trials (n)', width / 2, height - 10);
+
+                    trajCtx.save();
+                    trajCtx.translate(15, height / 2);
+                    trajCtx.rotate(-Math.PI / 2);
+                    trajCtx.fillText('Relative Frequency f(n)', 0, 0);
+                    trajCtx.restore();
+
+                    // Draw tick marks
+                    trajCtx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+                    trajCtx.font = '12px Arial';
+                    trajCtx.textAlign = 'center';
+                    for (let i = 0; i <= 5; i++) {
+                        const x = padding + (i * (width - padding * 1.5)) / 5;
+                        const tickValue = Math.round((i * n) / 5);
+                        trajCtx.fillText(tickValue, x, height - padding + 20);
+                    }
+
+                    trajCtx.textAlign = 'right';
+                    for (let i = 0; i <= 5; i++) {
+                        const y = height - padding - (i * yScale) / 5;
+                        const tickValue = (i / 5).toFixed(1);
+                        trajCtx.fillText(tickValue, padding - 10, y + 5);
+                    }
+                }
+
+                function drawHistogram() {
+                    const width = histCanvas.width;
+                    const height = histCanvas.height;
+                    const padding = 60;
+
+                    histCtx.clearRect(0, 0, width, height);
+
+                    if (currentStep === 0) return;
+
+                    // Get current frequencies
+                    const currentFreqs = trajectories.map(t => t.frequencies[currentStep] || 0);
+
+                    // Create histogram bins
+                    const numBins = 25;
+                    const minFreq = 0;
+                    const maxFreq = 1;
+                    const binWidth = (maxFreq - minFreq) / numBins;
+                    const bins = new Array(numBins).fill(0);
+
+                    for (const freq of currentFreqs) {
+                        const binIndex = Math.min(Math.floor((freq - minFreq) / binWidth), numBins - 1);
+                        if (binIndex >= 0) bins[binIndex]++;
+                    }
+
+                    const maxBinCount = Math.max(...bins, 1);
+
+                    // Draw bars horizontally (standard histogram orientation)
+                    const barWidth = (width - padding * 2) / numBins;
+                    const yScale = (height - padding * 2) / maxBinCount;
+
+                    for (let i = 0; i < numBins; i++) {
+                        const barHeight = bins[i] * yScale;
+                        const x = padding + i * barWidth;
+                        const y = height - padding - barHeight;
+
+                        histCtx.fillStyle = 'rgba(102, 126, 234, 0.7)';
+                        histCtx.fillRect(x, y, barWidth - 2, barHeight);
+
+                        histCtx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                        histCtx.lineWidth = 1;
+                        histCtx.strokeRect(x, y, barWidth - 2, barHeight);
+                    }
+
+                    // Draw p indicator (vertical line)
+                    const pBinX = padding + ((p - minFreq) / binWidth) * barWidth + barWidth / 2;
+                    histCtx.strokeStyle = '#ff4444';
+                    histCtx.lineWidth = 3;
+                    histCtx.setLineDash([5, 5]);
+                    histCtx.beginPath();
+                    histCtx.moveTo(pBinX, padding / 2);
+                    histCtx.lineTo(pBinX, height - padding);
+                    histCtx.stroke();
+                    histCtx.setLineDash([]);
+
+                    // Draw p label
+                    histCtx.fillStyle = '#ff4444';
+                    histCtx.font = 'bold 14px Arial';
+                    histCtx.textAlign = 'center';
+                    histCtx.fillText(`p = ${p.toFixed(2)}`, pBinX, padding / 2 - 10);
+
+                    // Draw axes
+                    histCtx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                    histCtx.lineWidth = 2;
+                    histCtx.beginPath();
+                    histCtx.moveTo(padding, padding / 2);
+                    histCtx.lineTo(padding, height - padding);
+                    histCtx.lineTo(width - padding / 2, height - padding);
+                    histCtx.stroke();
+
+                    // X-axis label
+                    histCtx.fillStyle = 'white';
+                    histCtx.font = '14px Arial';
+                    histCtx.textAlign = 'center';
+                    histCtx.fillText('f(n) Distribution', width / 2, height - 10);
+
+                    // Y-axis label
+                    histCtx.save();
+                    histCtx.translate(15, height / 2);
+                    histCtx.rotate(-Math.PI / 2);
+                    histCtx.fillText('Frequency Count', 0, 0);
+                    histCtx.restore();
+
+                    // X-axis ticks (f(n) values)
+                    histCtx.font = '10px Arial';
+                    histCtx.textAlign = 'center';
+                    for (let i = 0; i <= 5; i++) {
+                        const freq = i / 5;
+                        const x = padding + (freq * (width - padding * 2));
+                        histCtx.fillText(freq.toFixed(1), x, height - padding + 20);
+                    }
+
+                    // Y-axis ticks (counts)
+                    histCtx.textAlign = 'right';
+                    for (let i = 0; i <= 5; i++) {
+                        const count = Math.round((i * maxBinCount) / 5);
+                        const y = height - padding - (i * (height - padding * 2)) / 5;
+                        histCtx.fillText(count, padding - 10, y + 4);
+                    }
+                }
+
+                function updateStats() {
+                    document.getElementById('current-step').textContent = currentStep;
+
+                    if (currentStep === 0) {
+                        document.getElementById('mean-fn').textContent = '-';
+                        document.getElementById('std-fn').textContent = '-';
+                        return;
+                    }
+
+                    const currentFreqs = trajectories.map(t => t.frequencies[currentStep]);
+                    const mean = currentFreqs.reduce((a, b) => a + b, 0) / m;
+                    const variance = currentFreqs.reduce((a, b) => a + (b - mean) ** 2, 0) / m;
+                    const std = Math.sqrt(variance);
+
+                    document.getElementById('mean-fn').textContent = mean.toFixed(4);
+                    document.getElementById('std-fn').textContent = std.toFixed(4);
+                }
+
+                function updateTheoreticalStd() {
+                    const theoreticalStd = Math.sqrt(p * (1 - p) / n);
+                    document.getElementById('theoretical-std').textContent = theoreticalStd.toFixed(4);
+                }
+
+                // ========== ANIMATION CONTROL ==========
+                function startSimulation() {
+                    if (isRunning) return;
+
+                    if (currentStep === 0) {
+                        initializeTrajectories();
+                    }
+
+                    isRunning = true;
+                    animate();
+                }
+
+                function stopSimulation() {
+                    isRunning = false;
+                    if (animationId) {
+                        cancelAnimationFrame(animationId);
+                        animationId = null;
+                    }
+                }
+
+                function resetSimulation() {
+                    stopSimulation();
+                    initializeTrajectories();
+                    drawVisualization();
+                }
+
+                function animate() {
+                    if (!isRunning || currentStep >= n) {
+                        isRunning = false;
+                        return;
+                    }
+
+                    performTrials(animationSpeed);
+                    drawVisualization();
+
+                    animationId = requestAnimationFrame(animate);
+                }
+
+                // Initialize
+                updateTheoreticalStd();
+                resetSimulation();
+            </script>
             <!-- From Uiverse.io by mobinkakei --> 
              <div class="nav-buttons">
              <a href="third_homework.html">

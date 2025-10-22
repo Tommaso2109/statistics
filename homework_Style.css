@@ -475,3 +475,152 @@ pre, pre[id$="-output"] {
   color: #ffffff !important;
 }
 
+.description-box {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+    line-height: 1.6;
+}
+
+.description-box h3 {
+    color: #ffffff;
+    margin-top: 0;
+}
+
+.description-box ul {
+    margin-left: 20px;
+}
+
+.description-box li {
+    margin: 8px 0;
+}
+
+.controls {
+    margin: 30px 0;
+}
+
+.control-group {
+    display: flex;
+    align-items: center;
+    margin: 15px 0;
+    gap: 10px;
+}
+
+.control-group label {
+    min-width: 220px;
+    font-weight: bold;
+}
+
+.control-group input[type="range"] {
+    flex: 1;
+    max-width: 300px;
+}
+
+.control-group span {
+    min-width: 60px;
+    font-family: monospace;
+    font-size: 1.1em;
+    color: #ffffff;
+}
+
+.sim-button {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    margin: 10px 5px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.sim-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.sim-button:active {
+    transform: translateY(0);
+}
+
+.visualization-container {
+    display: flex;
+    flex-direction: column; /* stack vertically */
+    gap: 15px;
+    margin: 10px 0;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 20px;
+    border-radius: 10px;
+}
+
+.main-chart-container {
+    width: 100%; /* full width */
+    min-height: 600px; /* increased height */
+}
+
+.histogram-container {
+    width: 100%; /* full width */
+}
+
+#trajectories-canvas{
+    width: 100%;
+    height: 500px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 5px;
+}
+
+#histogram-canvas{
+    width: 100%;
+    height: 250px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 5px;
+}
+.stats-display {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.stat-box {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+}
+
+.stat-box h4 {
+    margin: 0 0 10px 0;
+    color: #ffffff;
+    font-size: 0.9em;
+    text-transform: uppercase;
+}
+
+.stat-box p {
+    margin: 0;
+    font-size: 1.5em;
+    font-weight: bold;
+    color: white;
+    font-family: monospace;
+}
+
+@media (max-width: 768px) {
+    .visualization-container {
+        flex-direction: column;
+    }
+
+    .control-group {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .control-group input[type="range"] {
+        width: 100%;
+        max-width: 100%;
+    }
+}

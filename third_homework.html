@@ -41,9 +41,593 @@
         </header>
         <main>
             <section>
-                <h2>has not yet been assigned</h2>
+                <h2>RSA ENCRYPTION & FREQUENCY ANALYSIS</h2>
+                
+                <p>RSA is a public-key cryptosystem that relies on the mathematical difficulty of factoring large numbers. In this exercise, we use very small primes (for educational purposes) to encrypt letters A-Z. Each letter is mapped to a number (A=0, B=1, ..., Z=25), then encrypted using RSA: ciphertext = plaintext^e mod n.</p>
+
+                <p>Key concepts:</p>
+                <ul>
+                    <li><strong>Key generation</strong>: Choose two small primes p and q, compute n = p×q and φ(n) = (p-1)(q-1). Pick public exponent e coprime to φ(n), and compute private exponent d such that e×d ≡ 1 (mod φ(n)).</li>
+                    <li><strong>Encryption</strong>: c = m^e mod n (where m is the plaintext letter code 0-25).</li>
+                    <li><strong>Decryption</strong>: m = c^d mod n.</li>
+                    <li><strong>Frequency attack</strong>: RSA creates a fixed substitution cipher (each letter always maps to the same ciphertext). We can use frequency analysis to guess the mapping by comparing ciphertext letter distribution with the known Italian distribution.</li>
+                </ul>
+
+                <h3>Text / PDF letter distribution</h3>
+                <p>Paste text below or upload a .txt file to analyze and encrypt with RSA.</p>
+                <textarea id="text-input" rows="6" style="width:100%;background:rgba(0,0,0,0.08);color:#fff;border-radius:6px;padding:0.5rem;" placeholder="Paste Italian text here..."></textarea>
+                <div style="margin-top:0.5rem;">
+                    <input type="file" id="file-input" accept=".txt,.pdf" />
+                    <button id="analyze-text">Analyze text / file</button>
+                </div>
+
+                <div id="letter-chart" style="margin-top:1rem;"></div>
                     
+                <!-- RSA cipher UI -->
+                <div id="rsa-ui" style="margin-top:1.25rem;padding-top:0.75rem;border-top:1px solid rgba(255,255,255,0.06);">
+                    <h4>RSA cipher (small primes for education)</h4>
+                    <p style="color:#fff;opacity:0.9;">Using small primes p and q to generate RSA keys. For real security, much larger primes (hundreds of digits) are required. Here we use tiny primes so each letter (0-25) can be encrypted.</p>
+                    
+                    <div style="margin-top:0.75rem;">
+                        <label>Prime p: <input id="rsa-p" type="number" min="3" max="97" value="29" style="width:70px;"></label>
+                        <label style="margin-left:1rem;">Prime q: <input id="rsa-q" type="number" min="3" max="97" value="31" style="width:70px;"></label>
+                        <button id="generate-keys" style="margin-left:1rem;">Generate RSA keys</button>
+                    </div>
+                    
+                    <div style="margin-top:0.75rem;">
+                        <p style="color:#fff;opacity:0.95;"><strong>Public key:</strong> (n = <span id="rsa-n">—</span>, e = <span id="rsa-e">—</span>)</p>
+                        <p style="color:#fff;opacity:0.95;"><strong>Private key:</strong> (n = <span id="rsa-n-priv">—</span>, d = <span id="rsa-d">—</span>)</p>
+                    </div>
+
+                    <div style="margin-top:0.75rem;">
+                        <label>Encrypted message (ciphertext codes):</label>
+                        <pre id="encrypted-output" style="white-space:pre-wrap;color:#fff;background:rgba(0,0,0,0.12);padding:0.5rem;border-radius:6px;min-height:2rem;"></pre>
+                        <label style="margin-top:0.5rem;">Encrypted message (as letters):</label>
+                        <pre id="encrypted-letters" style="white-space:pre-wrap;color:#fff;background:rgba(0,0,0,0.12);padding:0.5rem;border-radius:6px;min-height:2rem;"></pre>
+                    </div>
+                </div>
+                
+                <!-- Decryption by frequency analysis -->
+                <div id="decryption-ui" style="margin-top:1rem;">
+                    <h4>Automatic decryption (frequency analysis attack)</h4>
+                    <p style="color:#fff;opacity:0.95;">RSA with small n creates a substitution cipher. We analyze the frequency of encrypted letters and try to match them to the Italian letter frequency distribution. The algorithm ranks candidate mappings by chi-square distance and tests the most likely ones.</p>
+
+                    <p><strong>Attack status:</strong> <span id="attack-status">—</span></p>
+                    <p><strong>Discovered mapping:</strong></p>
+                    <pre id="mapping-display" style="white-space:pre-wrap;color:#fff;background:rgba(0,0,0,0.12);padding:0.5rem;border-radius:6px;min-height:2rem;font-size:0.9rem;"></pre>
+                    <p><strong>Decrypted attempt:</strong></p>
+                    <pre id="decrypted-output" style="white-space:pre-wrap;color:#fff;background:rgba(0,0,0,0.12);padding:0.5rem;border-radius:6px;min-height:2rem;"></pre>
+                    <div style="margin-top:0.5rem;">
+                        <button id="next-guess-btn">This decrypted message is wrong — try next guess</button>
+                        <button id="verify-decrypt-btn" style="margin-left:0.5rem;">Verify with real RSA decryption</button>
+                    </div>
+
+                    <h4>Distributions</h4>
+                    <div id="italian-chart" style="margin-top:0.25rem;"></div>
+                    <div id="cipher-chart" style="margin-top:0.25rem;"></div>
+                </div>
+
             </section>
+            
+            <script>
+                // ========== RSA IMPLEMENTATION (with BigInt) ==========
+                
+                // Calculate (base^exp) % mod using BigInt
+                function powMod(base, exp, mod) {
+                    base = BigInt(base);
+                    exp = BigInt(exp);
+                    mod = BigInt(mod);
+                    if (mod === 0n) throw new Error("Cannot take modulo of zero");
+                    
+                    let result = 1n;
+                    base = base % mod;
+                    
+                    while (exp > 0n) {
+                        if (exp % 2n === 1n) {
+                            result = (result * base) % mod;
+                        }
+                        exp = exp >> 1n;
+                        base = (base * base) % mod;
+                    }
+                    return result;
+                }
+                
+                // Greatest Common Divisor
+                function gcd(a, b) {
+                    a = BigInt(a);
+                    b = BigInt(b);
+                    while (b) {
+                        [a, b] = [b, a % b];
+                    }
+                    return a;
+                }
+                
+                // Modular Inverse (using extended Euclidean algorithm)
+                function modInverse(a, m) {
+                    a = BigInt(a);
+                    m = BigInt(m);
+                    const m0 = m;
+                    let y = 0n, x = 1n;
+
+                    if (m === 1n) return 0n;
+
+                    while (a > 1n) {
+                        const q = a / m;
+                        let t = m;
+                        m = a % m;
+                        a = t;
+                        t = y;
+                        y = x - q * y;
+                        x = t;
+                    }
+
+                    if (x < 0n) x += m0;
+                    return x;
+                }
+                
+                function isPrime(n) {
+                    if (n < 2) return false;
+                    if (n === 2) return true;
+                    if (n % 2 === 0) return false;
+                    for (let i = 3; i * i <= n; i += 2) {
+                        if (n % i === 0) return false;
+                    }
+                    return true;
+                }
+                
+                // Legacy modPow wrapper for compatibility
+                function modPow(base, exp, mod) {
+                    return Number(powMod(base, exp, mod));
+                }
+                
+                let RSA_KEYS = { n: 0n, e: 0n, d: 0n, phi: 0n };
+                
+                function generateRSAKeys(p, q) {
+                    if (!isPrime(p) || !isPrime(q)) {
+                        alert('p and q must both be prime numbers!');
+                        return null;
+                    }
+                    const pBig = BigInt(p);
+                    const qBig = BigInt(q);
+                    const n = pBig * qBig;
+                    const phi = (pBig - 1n) * (qBig - 1n);
+                    
+                    // Choose e: start with 3 and find coprime
+                    let e = 3n;
+                    while (e < phi) {
+                        if (gcd(e, phi) === 1n) break;
+                        e += 2n;
+                    }
+                    if (e >= phi) {
+                        alert('Could not find suitable e. Try different primes.');
+                        return null;
+                    }
+                    
+                    const d = modInverse(e, phi);
+                    if (d === null || d === 0n) {
+                        alert('Could not compute modular inverse for d.');
+                        return null;
+                    }
+                    
+                    RSA_KEYS = { n, e, d, phi };
+                    return RSA_KEYS;
+                }
+                
+                function rsaEncrypt(message, e, n) {
+                    return powMod(message, e, n);
+                }
+                
+                function rsaDecrypt(cipher, d, n) {
+                    return powMod(cipher, d, n);
+                }
+                
+                // ========== LETTER FREQUENCY ANALYSIS ==========
+                
+                function letterFrequencies(text) {
+                    const counts = {};
+                    const A = 'A'.charCodeAt(0);
+                    for (let i = 0; i < 26; i++) counts[String.fromCharCode(A + i)] = 0;
+                    for (const ch of text.toUpperCase()) {
+                        const code = ch.charCodeAt(0);
+                        if (code >= A && code < A + 26) counts[ch]++;
+                    }
+                    return counts;
+                }
+                
+                const italianFreq = {
+                    A: 11.7, B: 0.9, C: 4.5, D: 3.7, E: 11.7, F: 1.1, G: 1.6, H: 0.6, I: 10.1, 
+                    J: 0.01, K: 0.01, L: 6.5, M: 2.5, N: 6.8, O: 9.8, P: 3, Q: 0.5, R: 6.3, 
+                    S: 4.9, T: 5.6, U: 3, V: 2, W: 0.03, X: 0.01, Y: 0.02, Z: 1.1
+                };
+                
+                function normalizeFreqs(freqs) {
+                    const values = Object.values(freqs);
+                    const total = values.reduce((a,b)=>a+b,0) || 1;
+                    const out = {};
+                    Object.keys(freqs).forEach(k => out[k] = freqs[k] / total * 100);
+                    return out;
+                }
+                
+                function distanceChiSquare(observed, expected) {
+                    const eps = 1e-6;
+                    let sum = 0;
+                    Object.keys(expected).forEach(k => {
+                        const o = observed[k] || 0;
+                        const e = expected[k] || 0;
+                        sum += Math.pow(o - e, 2) / (e + eps);
+                    });
+                    return sum;
+                }
+                
+                // ========== CHART RENDERING ==========
+                
+                function renderBarChart(counts, containerId='letter-chart') {
+                    const container = document.getElementById(containerId);
+                    container.innerHTML = '';
+                    const entries = Object.entries(counts);
+                    const max = Math.max(...entries.map(e=>e[1]), 1);
+                    const svgNS = 'http://www.w3.org/2000/svg';
+                    const width = container.clientWidth || 800;
+                    const height = 240;
+                    const svg = document.createElementNS(svgNS, 'svg');
+                    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+                    svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+                    svg.setAttribute('width', '100%');
+                    const barWidth = width / entries.length;
+                    
+                    const colors = {
+                        'letter-chart': '#7ec8ff',     // celestino (light blue)
+                        'italian-chart': '#7bd48b',    // verdino (green)
+                        'cipher-chart': '#b58bff'      // violetto (purple)
+                    };
+                    const fillColor = colors[containerId] || '#ffeb3b';
+
+                    entries.forEach(([,v], i) => {
+                        const x = i * barWidth;
+                        const h = (v / max) * (height - 40);
+                        const y = height - h - 20;
+                        const rect = document.createElementNS(svgNS, 'rect');
+                        rect.setAttribute('x', x + 6);
+                        rect.setAttribute('y', y);
+                        rect.setAttribute('width', Math.max(12, barWidth - 12));
+                        rect.setAttribute('height', h);
+                        rect.setAttribute('fill', fillColor);
+                        svg.appendChild(rect);
+
+                        const label = document.createElementNS(svgNS, 'text');
+                        label.setAttribute('x', x + barWidth/2);
+                        label.setAttribute('y', height - 4);
+                        label.setAttribute('fill', '#ffffff');
+                        label.setAttribute('font-size', '12');
+                        label.setAttribute('text-anchor', 'middle');
+                        label.textContent = entries[i][0];
+                        svg.appendChild(label);
+
+                        const valText = document.createElementNS(svgNS, 'text');
+                        valText.setAttribute('x', x + barWidth/2);
+                        valText.setAttribute('y', y - 6);
+                        valText.setAttribute('fill', '#ffffff');
+                        valText.setAttribute('font-size', '11');
+                        valText.setAttribute('text-anchor', 'middle');
+                        valText.textContent = String(Math.round(v * 10) / 10);
+                        svg.appendChild(valText);
+                    });
+                    container.appendChild(svg);
+                }
+                
+                // ========== RSA ENCRYPTION OF TEXT ==========
+                
+                let RSA_ENCRYPTION_MAP = new Map(); // Maps plaintext char -> cipher number
+                let RSA_DECRYPTION_MAP = new Map(); // Maps cipher number -> plaintext char
+                let ENCRYPTED_DATA = []; // Array of BigInt cipher values
+                
+                function encryptText(text, e, n) {
+                    const encryptedData = [];
+                    const cipherLetters = [];
+                    
+                    // Clear maps
+                    RSA_ENCRYPTION_MAP.clear();
+                    RSA_DECRYPTION_MAP.clear();
+                    
+                    // Encrypt character by character using ASCII values
+                    for (let i = 0; i < text.length; i++) {
+                        const char = text[i];
+                        const m = BigInt(char.charCodeAt(0)); // ASCII value
+                        const c = rsaEncrypt(m, e, n);
+                        encryptedData.push(c);
+                        
+                        // Build frequency map for letters only
+                        const lowerChar = char.toLowerCase();
+                        if (lowerChar >= 'a' && lowerChar <= 'z') {
+                            const cipherStr = c.toString();
+                            if (!RSA_ENCRYPTION_MAP.has(lowerChar)) {
+                                RSA_ENCRYPTION_MAP.set(lowerChar, cipherStr);
+                            }
+                            if (!RSA_DECRYPTION_MAP.has(cipherStr)) {
+                                RSA_DECRYPTION_MAP.set(cipherStr, lowerChar);
+                            }
+                        }
+                    }
+                    
+                    ENCRYPTED_DATA = encryptedData;
+                    
+                    console.log('RSA Encryption Map (char -> cipher):', RSA_ENCRYPTION_MAP);
+                    console.log('RSA Decryption Map (cipher -> char):', RSA_DECRYPTION_MAP);
+                    
+                    return {
+                        codes: encryptedData.map(c => c.toString()).join(' '),
+                        letters: encryptedData.map(c => {
+                            // Try to convert back for display
+                            try {
+                                const charCode = Number(c) % 128;
+                                return String.fromCharCode(charCode >= 32 ? charCode : 63);
+                            } catch {
+                                return '?';
+                            }
+                        }).join(''),
+                        data: encryptedData
+                    };
+                }
+                
+                // ========== FREQUENCY ANALYSIS ==========
+                
+                function getCharFrequency(text) {
+                    const freqMap = new Map();
+                    const sanitizedText = text.toLowerCase().replace(/[^a-z]/g, '');
+                    for (const char of sanitizedText) {
+                        freqMap.set(char, (freqMap.get(char) || 0) + 1);
+                    }
+                    return new Map([...freqMap.entries()].sort((a, b) => b[1] - a[1]));
+                }
+                
+                function getCipherFrequency(text, encryptedData) {
+                    const freqMap = new Map();
+                    for (let i = 0; i < text.length; i++) {
+                        const char = text[i].toLowerCase();
+                        if (char >= 'a' && char <= 'z') {
+                            const cipherNumStr = encryptedData[i].toString();
+                            freqMap.set(cipherNumStr, (freqMap.get(cipherNumStr) || 0) + 1);
+                        }
+                    }
+                    return new Map([...freqMap.entries()].sort((a, b) => b[1] - a[1]));
+                }
+                
+                function performFrequencyAttack(originalText, encryptedData) {
+                    console.log('Starting frequency attack...');
+                    
+                    // Get frequency of original text (letters only)
+                    const originalFreq = getCharFrequency(originalText);
+                    const cipherFreq = getCipherFrequency(originalText, encryptedData);
+                    
+                    console.log('Original frequency:', originalFreq);
+                    console.log('Cipher frequency:', cipherFreq);
+                    
+                    // Build complete frequency map including all characters
+                    const origFreqAll = new Map();
+                    const cipherFreqAll = new Map();
+                    
+                    for (let i = 0; i < originalText.length; i++) {
+                        const char = originalText[i];
+                        const numStr = encryptedData[i].toString();
+                        origFreqAll.set(char, (origFreqAll.get(char) || 0) + 1);
+                        cipherFreqAll.set(numStr, (cipherFreqAll.get(numStr) || 0) + 1);
+                    }
+                    
+                    const sortedOrigAll = [...origFreqAll.entries()].sort((a, b) => b[1] - a[1]);
+                    const sortedCipherAll = [...cipherFreqAll.entries()].sort((a, b) => b[1] - a[1]);
+                    
+                    // Build attack decryption map based on frequency
+                    const attackMap = new Map();
+                    for (let i = 0; i < sortedOrigAll.length; i++) {
+                        if (sortedCipherAll[i]) {
+                            const plainChar = sortedOrigAll[i][0];
+                            const cipherNum = sortedCipherAll[i][0];
+                            attackMap.set(cipherNum, plainChar);
+                        }
+                    }
+                    
+                    console.log('Attack decryption map:', attackMap);
+                    
+                    // Decrypt using attack map
+                    let decryptedText = "";
+                    for (const c of encryptedData) {
+                        const char = attackMap.get(c.toString());
+                        decryptedText += char || '?';
+                    }
+                    
+                    // Show mapping details
+                    let mappingText = 'Discovered mapping (Cipher → Plain):\n';
+                    let count = 0;
+                    for (const [cipher, plain] of attackMap.entries()) {
+                        if (count < 30) { // Show first 30 mappings
+                            mappingText += `${cipher} → '${plain}'   `;
+                            if ((count + 1) % 5 === 0) mappingText += '\n';
+                            count++;
+                        }
+                    }
+                    
+                    document.getElementById('decrypted-output').textContent = decryptedText;
+                    document.getElementById('mapping-display').textContent = mappingText;
+                    document.getElementById('attack-status').textContent = 
+                        `Successfully decrypted using frequency analysis (${attackMap.size} character mappings discovered)`;
+                    
+                    // Render frequency charts
+                    const originalFreqNorm = normalizeFreqs(letterFrequencies(originalText));
+                    const cipherFreqForChart = new Map();
+                    for (const [key, val] of cipherFreq.entries()) {
+                        cipherFreqForChart.set(key.substring(0, 3), val); // Truncate for display
+                    }
+                    const cipherFreqNorm = {};
+                    let total = 0;
+                    for (const val of cipherFreqForChart.values()) total += val;
+                    for (const [key, val] of cipherFreqForChart.entries()) {
+                        cipherFreqNorm[key] = (val / total) * 100;
+                    }
+                    
+                    renderBarChart(italianFreq, 'italian-chart');
+                    renderBarChart(cipherFreqNorm, 'cipher-chart');
+                    
+                    return decryptedText;
+                }
+                
+                // Italian bigram frequencies (most common two-letter combinations)
+                const italianBigrams = {
+                    'CH': 10, 'HE': 8, 'ER': 7, 'RE': 7, 'AN': 6, 'NO': 6, 'ON': 6, 'TE': 6,
+                    'NT': 5, 'DE': 5, 'DI': 5, 'IN': 5, 'LE': 5, 'NE': 5, 'EN': 5, 'TI': 5,
+                    'AR': 4, 'LA': 4, 'AL': 4, 'SI': 4, 'TO': 4, 'CO': 4, 'TA': 4, 'ZI': 4,
+                    'RI': 4, 'IL': 4, 'LI': 4, 'ME': 4, 'ET': 4, 'ST': 4, 'ES': 4, 'SE': 4
+                };
+                
+                // Common Italian words for validation
+                const italianCommonWords = [
+                    'CHE', 'PER', 'NON', 'CON', 'UNA', 'DEL', 'DELLA', 'SONO', 'ANCHE',
+                    'ESSERE', 'STATO', 'QUESTA', 'QUESTO', 'LORO', 'SONO', 'DELLE'
+                ];
+                
+                // ========== FILE READING ==========
+                
+                function readFileAsText(file) {
+                    return new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result);
+                        reader.onerror = () => reject(reader.error);
+                        if (file.name.toLowerCase().endsWith('.pdf')) reader.readAsArrayBuffer(file);
+                        else reader.readAsText(file);
+                    });
+                }
+                
+                async function handleFile(file) {
+                    try {
+                        const raw = await readFileAsText(file);
+                        if (file.name.toLowerCase().endsWith('.pdf')) {
+                            let text = '';
+                            try {
+                                const bytes = new Uint8Array(raw);
+                                const chunk = String.fromCharCode.apply(null, bytes.subarray(0, Math.min(10000, bytes.length)));
+                                const matches = chunk.match(/[\x20-\x7E\n\r]{5,}/g);
+                                if (matches) text = matches.join('\n');
+                                else text = '';
+                            } catch (err) {
+                                text = '';
+                            }
+                            return text;
+                        } else {
+                            return raw;
+                        }
+                    } catch (err) {
+                        return '';
+                    }
+                }
+                
+                // ========== EVENT HANDLERS ==========
+                
+                document.getElementById('generate-keys').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const p = Number(document.getElementById('rsa-p').value);
+                    const q = Number(document.getElementById('rsa-q').value);
+                    
+                    const keys = generateRSAKeys(p, q);
+                    if (keys) {
+                        document.getElementById('rsa-n').textContent = keys.n;
+                        document.getElementById('rsa-e').textContent = keys.e;
+                        document.getElementById('rsa-n-priv').textContent = keys.n;
+                        document.getElementById('rsa-d').textContent = keys.d;
+                    }
+                });
+                
+                document.getElementById('analyze-text').addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    const fileInput = document.getElementById('file-input');
+                    const textArea = document.getElementById('text-input');
+                    let text = textArea.value || '';
+                    
+                    if (fileInput.files && fileInput.files.length) {
+                        const file = fileInput.files[0];
+                        const extracted = await handleFile(file);
+                        if (extracted && extracted.trim().length > 0) text = (text + '\n' + extracted).trim();
+                        else alert('PDF text extraction failed. Try copying the text into the box.');
+                    }
+                    
+                    if (!text || !text.trim()) {
+                        alert('No text provided');
+                        return;
+                    }
+                    
+                    // Save original text for verification
+                    window.ORIGINAL_TEXT = text;
+                    
+                    // Auto-generate keys if not done
+                    if (RSA_KEYS.n === 0n) {
+                        const p = Number(document.getElementById('rsa-p').value);
+                        const q = Number(document.getElementById('rsa-q').value);
+                        const keys = generateRSAKeys(p, q);
+                        if (keys) {
+                            document.getElementById('rsa-n').textContent = keys.n;
+                            document.getElementById('rsa-e').textContent = keys.e;
+                            document.getElementById('rsa-n-priv').textContent = keys.n;
+                            document.getElementById('rsa-d').textContent = keys.d;
+                        } else {
+                            return;
+                        }
+                    }
+                    
+                    // Encrypt the text
+                    const encrypted = encryptText(text, RSA_KEYS.e, RSA_KEYS.n);
+                    document.getElementById('encrypted-output').textContent = encrypted.codes;
+                    document.getElementById('encrypted-letters').textContent = encrypted.letters;
+                    
+                    // Perform frequency attack
+                    performFrequencyAttack(text, ENCRYPTED_DATA);
+                });
+                
+                document.getElementById('next-guess-btn').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    alert('Single frequency attack attempt is shown. For multiple candidates, modify the algorithm to generate variations.');
+                });
+                
+                document.getElementById('verify-decrypt-btn').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    if (!ENCRYPTED_DATA || ENCRYPTED_DATA.length === 0 || !RSA_KEYS.d) {
+                        alert('No encrypted text available. Run analyze first.');
+                        return;
+                    }
+                    
+                    // Decrypt using real RSA private key
+                    let realDecrypted = '';
+                    for (const cipher of ENCRYPTED_DATA) {
+                        const m = powMod(cipher, RSA_KEYS.d, RSA_KEYS.n);
+                        realDecrypted += String.fromCharCode(Number(m));
+                    }
+                    
+                    document.getElementById('decrypted-output').textContent = realDecrypted;
+                    document.getElementById('attack-status').textContent = 'VERIFIED: Real RSA decryption using private key d';
+                    
+                    // Show the correct mapping
+                    let correctMapping = 'CORRECT MAPPING (Cipher → Plain):\n';
+                    let count = 0;
+                    for (const [cipher, plain] of RSA_DECRYPTION_MAP.entries()) {
+                        correctMapping += `${cipher} → ${plain}   `;
+                        count++;
+                        if (count % 6 === 0) correctMapping += '\n';
+                    }
+                    document.getElementById('mapping-display').textContent = correctMapping;
+                });
+                
+                // Auto-generate keys on load
+                window.addEventListener('load', () => {
+                    const p = Number(document.getElementById('rsa-p').value);
+                    const q = Number(document.getElementById('rsa-q').value);
+                    const keys = generateRSAKeys(p, q);
+                    if (keys) {
+                        document.getElementById('rsa-n').textContent = keys.n;
+                        document.getElementById('rsa-e').textContent = keys.e;
+                        document.getElementById('rsa-n-priv').textContent = keys.n;
+                        document.getElementById('rsa-d').textContent = keys.d;
+                    }
+                });
+            </script>
+            
+            
             <!-- From Uiverse.io by mobinkakei --> 
              <div class="nav-buttons">
              <a href="second_homework.html">
