@@ -40,9 +40,70 @@
 
         </header>
         <main>
-            <section>
-                <h2>has not yet been assigned</h2>
-                    
+            <section id="measures-of-location-dispersion">
+                <h2>Measures of Location and Dispersion</h2>
+
+                <article>
+                    <h3>Overview</h3>
+                    <p>This page summarizes common measures of location (central tendency) and dispersion (variability). It describes definitions, typical uses, strengths, and limitations so you can choose the right summary for different data types and situations.</p>
+                </article>
+
+                <article>
+                    <h3>Measures of Location (Central Tendency)</h3>
+                    <ul>
+                        <li><strong>Arithmetic mean</strong> — x̄ = (1/n) Σ x_i. Use for interval/ratio data when distribution is roughly symmetric. Efficient under normality but sensitive to outliers.</li>
+                        <li><strong>Median</strong> — middle value after sorting. Use for skewed distributions or ordinal data. Robust to outliers; ignores magnitude of extreme values.</li>
+                        <li><strong>Mode</strong> — most frequent value (or density peak). Useful for nominal data or to show multimodality.</li>
+                        <li><strong>Trimmed / Winsorized mean</strong> — remove or limit extremes before averaging. Good compromise when a few outliers exist.</li>
+                        <li><strong>Geometric &amp; Harmonic means</strong> — geometric mean for multiplicative processes (growth rates), harmonic mean for averaging rates (e.g., speeds). Require positive values.</li>
+                        <li><strong>Weighted mean</strong> — when observations have different importance or reliability: x̄_w = Σ w_i x_i / Σ w_i.</li>
+                    </ul>
+                </article>
+
+                <article>
+                    <h3>Measures of Dispersion (Variability)</h3>
+                    <ul>
+                        <li><strong>Range</strong> — max − min. Simple but highly sensitive to outliers.</li>
+                        <li><strong>Interquartile range (IQR)</strong> — Q3 − Q1. Robust spread of the middle 50%; used in boxplots and outlier detection.</li>
+                        <li><strong>Variance &amp; Standard deviation</strong> — sample variance s² = (1/(n−1)) Σ(x_i − x̄)², SD = √s². Common in parametric methods; sensitive to outliers.</li>
+                        <li><strong>Median absolute deviation (MAD)</strong> — median(|x_i − median(x)|). Highly robust; scaled version estimates SD under normality.</li>
+                        <li><strong>Coefficient of variation (CV)</strong> — s / x̄. Use to compare relative variability across different means or units (avoid if mean ≈ 0).</li>
+                    </ul>
+                </article>
+
+                <article>
+                    <h3>When to use which</h3>
+                    <p>Choose summaries based on data type, distribution shape, and the analysis goal:</p>
+                    <ul>
+                        <li>Nominal → <em>mode</em>.</li>
+                        <li>Ordinal or strongly skewed → <em>median</em> + <em>IQR</em>.</li>
+                        <li>Numeric, symmetric, no outliers → <em>mean</em> + <em>SD</em>.</li>
+                        <li>Data with a few extreme values → <em>trimmed mean</em> or report both mean and median.</li>
+                        <li>Comparing variability across scales → <em>CV</em> (if mean is meaningful and not near zero).</li>
+                        <li>Growth rates → <em>geometric mean</em>; averaging speeds over equal distances → <em>harmonic mean</em>.</li>
+                    </ul>
+                </article>
+
+                <article>
+                    <h3>Visualization &amp; reporting tips</h3>
+                    <ul>
+                        <li>Plot a histogram or density to show shape and modality.</li>
+                        <li>Use a boxplot to present median, IQR, whiskers (commonly 1.5×IQR) and outliers.</li>
+                        <li>Report at least one robust and one mean-based summary when unsure (e.g., median/IQR and mean/SD), and include a plot.</li>
+                        <li>When transforming data (log, etc.), interpret summaries carefully on the original scale (e.g., exponentiate mean of logs for geometric interpretation).</li>
+                    </ul>
+                </article>
+
+                <article>
+                    <h3>Quick decision checklist</h3>
+                    <ul>
+                        <li>Is the data categorical? → report the <strong>mode</strong>.</li>
+                        <li>Is the data ordinal or heavily skewed? → report the <strong>median</strong> and <strong>IQR</strong>.</li>
+                        <li>Is the data numeric and roughly symmetric? → report the <strong>mean</strong> and <strong>SD</strong>.</li>
+                        <li>Are there a few extreme values? → consider <strong>trimmed mean</strong>, <strong>MAD</strong>, or show both mean and median.</li>
+                    </ul>
+                </article>
+
             </section>
             <!-- From Uiverse.io by mobinkakei --> 
              <div class="nav-buttons">

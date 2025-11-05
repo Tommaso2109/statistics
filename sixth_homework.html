@@ -5,6 +5,14 @@
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
         <link rel="stylesheet" href="homework_Style.css" />
+        <!-- MathJax: render LaTeX as math symbols -->
+        <script>
+            window.MathJax = {
+                tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] },
+                svg: { fontCache: 'global' }
+            };
+        </script>
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
         <noscript><link rel="stylesheet" href="noscript.css" /></noscript>
     </head>
     <body>
@@ -41,8 +49,234 @@
         </header>
         <main>
             <section>
-                <h2>has not yet been assigned</h2>
-                    
+                <h2>Online algorithms for mean and variance</h2>
+
+                <p>This page contains concise derivations of the recurrence relations for the arithmetic mean and variance and a numerically stable one-pass implementation (Welford's algorithm). The implementations update statistics incrementally (online) as new data arrives, avoiding large memory usage and numerical instability.</p>
+
+                <h3>Recurrence for the arithmetic mean</h3>
+                <p>Let $\mu_{n-1}$ be the mean after $n-1$ samples and $x_n$ be the new sample. The new mean $\mu_n$ is:</p>
+                <p>$$
+                \mu_n = \frac{1}{n}\sum_{i=1}^{n} x_i = \frac{1}{n}\left(\sum_{i=1}^{n-1} x_i + x_n\right) = \frac{(n-1)\mu_{n-1} + x_n}{n}
+                $$
+                Rearranging gives the common incremental form:
+                $$
+                \mu_n = \mu_{n-1} + \frac{x_n - \mu_{n-1}}{n}.
+                $$
+
+                <h3>Recurrence for variance (Welford's derivation)</h3>
+                <p>We want a one-pass, stable recurrence for the variance. Define the running second central moment $M2_n = \sum_{i=1}^n (x_i - \mu_n)^2$. Using algebra one can show the update:</p>
+                <p>When adding $x_n$ we set $\delta = x_n - \mu_{n-1}$ and the updated mean is $\mu_n = \mu_{n-1} + \delta/n$. Then:</p>
+                <p>$$
+                M2_n = M2_{n-1} + (x_n - \mu_{n-1})(x_n - \mu_n) = M2_{n-1} + \delta\,(\delta - \delta/n) = M2_{n-1} + \delta\,(x_n - \mu_n).
+                $$
+                <p>The population variance is $\sigma^2 = M2_n / n$, and the (unbiased) sample variance is $s^2 = M2_n / (n-1)$ for $n>1$.</p>
+
+                <h3>Why this is numerically stable</h3>
+                <p>Welford's update keeps differences $\delta$ (which are small relative to the mean) rather than subtracting two large sums. This avoids catastrophic cancellation and overflow compared to naive two-pass or sum-of-squares batch formulas.</p>
+
+                <h3>Interactive demonstration and verification</h3>
+                <p>Below is an interactive demo that shows step-by-step how the <code>OnlineStats</code> class updates the mean and variance (Welford's algorithm). The demo compares the online result with a batch computation (used only for verification) and highlights any discrepancies due to numerical error.</p>
+
+                <div id="demo">
+                    <div class="demo-controls">
+                        <button id="run-demo">Run demo (synthetic data)</button>
+                        <button id="run-random">Add random value</button>
+                        <button id="reset">Reset</button>
+                        <label style="margin-left:10px"><input type="checkbox" id="show-batch" checked> Show batch comparison</label>
+                    </div>
+                    <div id="demo-explanation" style="margin-top:0.5em; color: white;">
+                        <strong>Quick explanation:</strong>
+                        <ul>
+                            <li>On each new value we update the count <code>n</code>, the mean $\mu_n$ and the accumulator $M2_n$ used to compute the variance.</li>
+                            <li>The population variance is $\sigma^2 = M2_n / n$, the (unbiased) sample variance is $s^2 = M2_n / (n-1)$ for $n>1$.</li>
+                            <li>The batch comparison is shown only to verify that the online algorithm produces the same result within a numerical tolerance.</li>
+                        </ul>
+                    </div>
+                    <div id="results"></div>
+                </div>
+            </section>
+            <script>
+                // OnlineStats: Welford's algorithm
+                class OnlineStats {
+                    constructor() {
+                        this.n = 0;
+                        this.mean = 0.0;
+                        this.M2 = 0.0; // sum of squared deviations
+                    }
+                    add(x) {
+                        this.n += 1;
+                        const delta = x - this.mean;
+                        this.mean += delta / this.n;
+                        const delta2 = x - this.mean;
+                        this.M2 += delta * delta2;
+                    }
+                    count() { return this.n; }
+                    getMean() { return this.n > 0 ? this.mean : NaN; }
+                    // population variance
+                    getVariancePopulation() { return this.n > 0 ? this.M2 / this.n : NaN; }
+                    // sample variance (unbiased)
+                    getVarianceSample() { return this.n > 1 ? this.M2 / (this.n - 1) : NaN; }
+                    reset() { this.n = 0; this.mean = 0.0; this.M2 = 0.0; }
+                }
+
+                // Small helper: compute batch stats for verification only
+                function batchStats(arr) {
+                    const n = arr.length;
+                    if (n === 0) return {mean: NaN, varPop: NaN, varSample: NaN};
+                    let sum = 0, sumSq = 0;
+                    for (const x of arr) { sum += x; sumSq += x * x; }
+                    const mean = sum / n;
+                    // population variance using definition (exact for small n)
+                    let s2 = 0;
+                    for (const x of arr) { const d = x - mean; s2 += d * d; }
+                    return {mean: mean, varPop: s2 / n, varSample: n>1 ? s2 / (n-1) : NaN};
+                }
+
+                // Demo runner (migliorata)
+                (function(){
+                    const runBtn = document.getElementById('run-demo');
+                    const randBtn = document.getElementById('run-random');
+                    const resetBtn = document.getElementById('reset');
+                    const showBatchCheckbox = document.getElementById('show-batch');
+                    const results = document.getElementById('results');
+
+                    function clearResults() { results.innerHTML = ''; }
+
+                    function renderTable(online, batch, showBatch) {
+                        clearResults();
+                        const table = document.createElement('table');
+                        table.style.borderCollapse = 'collapse';
+                        table.style.width = '100%';
+                        const hdr = document.createElement('tr');
+                        ['Item', 'Online', (showBatch ? 'Batch' : ''), 'Diff', 'Match'].forEach(h => {
+                            if (!h) return;
+                            const th = document.createElement('th'); th.textContent = h; th.style.border = '1px solid #ccc'; th.style.padding = '6px'; hdr.appendChild(th);
+                        });
+                        table.appendChild(hdr);
+
+                        function row(name, onVal, batchVal) {
+                            const tr = document.createElement('tr');
+                            const tdName = document.createElement('td'); tdName.textContent = name; tdName.style.padding='6px'; tdName.style.border='1px solid #eee'; tr.appendChild(tdName);
+                            const tdOn = document.createElement('td'); tdOn.textContent = String(onVal); tdOn.style.padding='6px'; tdOn.style.border='1px solid #eee'; tr.appendChild(tdOn);
+                            if (showBatch) {
+                                const tdB = document.createElement('td'); tdB.textContent = String(batchVal); tdB.style.padding='6px'; tdB.style.border='1px solid #eee'; tr.appendChild(tdB);
+                            }
+                            const diff = (isFinite(onVal) && isFinite(batchVal)) ? Math.abs(onVal - batchVal) : NaN;
+                            const tdDiff = document.createElement('td'); tdDiff.textContent = isNaN(diff) ? '' : diff.toPrecision(6); tdDiff.style.padding='6px'; tdDiff.style.border='1px solid #eee'; tr.appendChild(tdDiff);
+                            const tol = 1e-6 * Math.max(1, Math.abs(batchVal || 0));
+                            const match = isFinite(diff) ? diff <= tol : (onVal===batchVal);
+                            const tdMatch = document.createElement('td'); tdMatch.textContent = match ? '✓' : '✗'; tdMatch.style.padding='6px'; tdMatch.style.border='1px solid #eee'; tdMatch.style.color = match ? 'green' : 'red'; tr.appendChild(tdMatch);
+                            return tr;
+                        }
+
+                        table.appendChild(row('Count (n)', online.count(), batch ? (batch._n || '') : ''));
+                        table.appendChild(row('Mean', online.getMean(), batch.mean));
+                        table.appendChild(row('Var (pop)', online.getVariancePopulation(), batch.varPop));
+                        table.appendChild(row('Var (sample)', online.getVarianceSample(), batch.varSample));
+                        results.appendChild(table);
+
+                        // short textual explanation
+                        const expl = document.createElement('div'); expl.style.marginTop='0.6em'; expl.style.color = 'white';
+                        expl.innerHTML = '<strong>Interpretation:</strong> If all entries show "✓" then the online algorithm and the batch computation agree within numerical tolerance; any "✗" indicates discrepancies possibly caused by floating-point representation or extreme input cases.';
+                        results.appendChild(expl);
+
+                        // re-render MathJax (utile se qualche stringa contiene espressioni LaTeX dinamiche)
+                        if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise();
+                    }
+
+                    // helper to prepare batch object with a _n field for display
+                    function batchFromArray(arr) {
+                        const b = batchStats(arr);
+                        b._n = arr.length;
+                        return b;
+                    }
+
+                    // synthetic test dataset
+                    function runSynthetic() {
+                        // dataset designed to show numerical stability
+                        const data = [1e8, 1e8+1, 1e8+2, 3, 4, 5, -1e8, 2, 2.5, 3.5, 4.5];
+                        const online = new OnlineStats();
+                        for (const x of data) online.add(x);
+                        const batch = batchFromArray(data);
+                        renderTable(online, batch, showBatchCheckbox.checked);
+                        // store for incremental demo
+                        window._demoOnline = online; window._demoData = data.slice();
+                    }
+
+                    runBtn.addEventListener('click', () => runSynthetic());
+
+                    randBtn.addEventListener('click', () => {
+                        let online = window._demoOnline; if (!online) { online = new OnlineStats(); window._demoOnline = online; window._demoData = []; }
+                        const x = (Math.random()-0.5) * 200 - 50 + Math.sin(Date.now()%1000);
+                        window._demoData.push(x); online.add(x);
+                        const batch = batchFromArray(window._demoData);
+                        renderTable(online, batch, showBatchCheckbox.checked);
+                    });
+
+                    resetBtn.addEventListener('click', () => { window._demoOnline = new OnlineStats(); window._demoData = []; clearResults(); });
+
+                    // auto-run once
+                    runSynthetic();
+                })();
+            </script>
+            <script>
+                // Toggle and copy for OPTIONAL HOMEWORK discussion
+                (function(){
+                    const btn = document.getElementById('toggle-optional');
+                    const copyBtn = document.getElementById('copy-optional');
+                    const box = document.getElementById('optional-discussion');
+                    if (!btn || !box) return;
+                    // if discussion is visible initially, ensure math is typeset
+                    if (box.style.display !== 'none' && window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise();
+                    btn.addEventListener('click', () => {
+                        if (box.style.display === 'none') { box.style.display = 'block'; btn.textContent = 'Hide discussion'; }
+                        else { box.style.display = 'none'; btn.textContent = 'Show discussion'; }
+                        if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise();
+                    });
+                    copyBtn.addEventListener('click', async () => {
+                        try {
+                            const text = box.innerText || box.textContent || '';
+                            await navigator.clipboard.writeText(text);
+                            copyBtn.textContent = 'Copied!';
+                            setTimeout(()=> copyBtn.textContent = 'Copy discussion', 1500);
+                        } catch (e) {
+                            // fallback: select and prompt
+                            alert('Copying failed. You can select the text and copy manually.');
+                        }
+                    });
+                })();
+            </script>
+            <section style="margin-top:1.2em; padding:0.8em; background: rgba(34,34,34,0.6); color:#fff; border-radius:6px;">
+                <h3 style="margin-top:0">OPTIONAL HOMEWORK</h3>
+                <p>This optional note discusses, from a numerical-analysis and computational perspective, the advantages of online algorithms (incremental updates) for mean and variance over traditional batch approaches.</p>
+
+                <div>
+                    <button id="toggle-optional">Hide discussion</button>
+                    <button id="copy-optional">Copy discussion</button>
+                </div>
+
+                <div id="optional-discussion" style="display:block; margin-top:0.8em; color: #eee; line-height:1.4;">
+                    <h4>Numerical stability</h4>
+                    <p>Online algorithms (like Welford's method) update statistics using small differences (deltas) between the new sample and the current mean. Working with these local differences reduces the need to subtract two large, nearly equal numbers, which is the main cause of catastrophic cancellation in floating-point arithmetic. As a result, running averages and variances computed online tend to be far more numerically stable than naive one-pass sum-of-squares formulas.</p>
+
+                    <h4>Error propagation and catastrophic cancellation</h4>
+                    <p>Batch formulas that compute variance via (sum of squares) - (square of sum)/n accumulate rounding error from both sums and then magnify it when subtracting similar quantities. Online formulas maintain an accumulator for the central second moment (M2) directly, avoiding large intermediate cancellations and reducing error propagation across many updates.</p>
+
+                    <h4>Overflow and range management</h4>
+                    <p>Online methods keep intermediate values relative to the current mean; this avoids squaring very large raw values (which can overflow) and keeps M2 values within a more controlled numeric range. This makes online algorithms safer on data with very large magnitudes or with mixed scales (very large and very small numbers).</p>
+
+                    <h4>Computational efficiency and memory</h4>
+                    <p>Online algorithms are O(1) per update (constant time) and O(1) additional memory: they do not store the whole dataset. Batch algorithms typically require O(n) memory or multiple passes over the data. For streaming or very-large datasets, the online approach is significantly more efficient and often the only feasible option.</p>
+
+                    <h4>Robustness and scalability</h4>
+                    <p>Online methods naturally support streaming data, distributed accumulation (mergeable summaries), and checkpointing. Many online estimators can be merged (combine counts, means, and M2) without reprocessing raw data, which improves scalability across parallel or distributed systems.</p>
+
+                    <h4>Practical trade-offs</h4>
+                    <p>While online algorithms are superior for numerical stability and streaming use-cases, batch algorithms may still be convenient for small datasets or when higher-precision arithmetic is available. For high-accuracy offline analysis, using extended precision or carefully designed multi-pass algorithms can close the numerical gap—but for most practical large-scale or streaming tasks, online algorithms are preferred.</p>
+
+                    <h4>Conclusion</h4>
+                    <p>From a numerical-analysis standpoint, the online (Welford-style) algorithms reduce catastrophic cancellation, limit error propagation, avoid overflow from intermediate squares, and run with minimal memory and CPU per sample. They are robust and scalable for modern data workflows and should be the default choice when processing streaming or very large datasets.</p>
+                </div>
             </section>
             <!-- From Uiverse.io by mobinkakei --> 
              <div class="nav-buttons">
