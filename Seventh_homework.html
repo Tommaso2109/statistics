@@ -41,9 +41,200 @@
         </header>
         <main>
             <section>
-                <h2>has not yet been assigned</h2>
-                    
+                <h2>Server security random-walk simulation</h2>
+                <p>
+                    This interactive simulation models a server that receives weekly security updates for 
+                    <strong>n</strong> weeks. </br> Each week there are <strong>m</strong> independent attackers. </br>
+                    Each attacker succeeds in breaching with probability <strong>p</strong>. A week is considered "secure" (score +1) when no attacker succeeds that week; otherwise it is "breached" (score -1).
+                    Over n weeks the total score for a trajectory is the sum of weekly +1 / -1 outcomes. The number of secure weeks K is binomial(n, q) with q = (1-p)^m, so the total score S = 2K - n.
+                </p>
+
+                <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:center;margin-bottom:0.5rem;">
+                    <label>Weeks (n): <input id="inp-n" type="number" value="10" min="1" style="width:80px"></label>
+                    <label>Attackers per week (m): <input id="inp-m" type="number" value="3" min="1" style="width:80px"></label>
+                    <label>Attacker breach prob (p): <input id="inp-p" type="number" value="0.1" step="0.01" min="0" max="1" style="width:90px"></label>
+                    <label>Simulated trajectories (T): <input id="inp-trials" type="number" value="2000" min="1" style="width:100px"></label>
+                    <button id="btn-run">Run simulation</button>
+                    <button id="btn-clear">Clear results</button>
+                </div>
+
+                <!-- Stack vertically so canvas and table both fill the section without scrolling -->
+                <div style="display:flex;flex-direction:column;gap:0.75rem;align-items:stretch;">
+                    <div style="width:100%;">
+                        <!-- Make canvas responsive: CSS width 100% and controlled CSS height; JS will size the drawing buffer for crisp rendering -->
+                        <canvas id="hist-canvas" width="960" height="240" style="width:100%;height:220px;border:1px solid #ccc;background:#ffffff;display:block"></canvas>
+                    </div>
+                    <div style="width:100%;border:1px solid #eee;padding:0.5rem;background:#ffffff;">
+                        <h3 style="margin:0 0 0.5rem 0;color:#111">Counts and theoretical expectation</h3>
+                        <table id="results-table" style="width:100%;font-size:0.95rem;border-collapse:collapse;color:#111">
+                            <thead>
+                                <tr>
+                                    <th style="text-align:left;padding:6px 8px;color:#111">Score S</th>
+                                    <th style="text-align:right;padding:6px 8px;color:#111">Empirical Count</th>
+                                    <th style="text-align:right;padding:6px 8px;color:#111">Empirical P</th>
+                                    <th style="text-align:right;padding:6px 8px;color:#111">Theoretical P</th>
+                                    <th style="text-align:right;padding:6px 8px;color:#111">Expected Count</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <p style="margin-top:0.6rem;font-size:0.9rem">Notes: The theoretical distribution for the number of secure weeks K is Binomial(n, q) with q = (1-p)^m. The plot overlays the empirical histogram (from simulation) and the theoretical PMF scaled by the number of trajectories.</p>
+
             </section>
+            <script>
+                // Helper: compute q = probability a week is secure (no attacker breaches)
+                function secureProb(p, m) {
+                    return Math.pow(1 - p, m);
+                }
+
+                // Compute binomial coefficient choose(n,k) safely
+                function choose(n, k) {
+                    if (k < 0 || k > n) return 0;
+                    k = Math.min(k, n - k);
+                    let num = 1;
+                    let den = 1;
+                    for (let i = 1; i <= k; i++) {
+                        num *= (n - (k - i));
+                        den *= i;
+                    }
+                    return Math.round(num / den);
+                }
+
+                // Compute binomial PMF P(K = k)
+                function binomPMF(n, k, q) {
+                    // handle edge cases
+                    if (q === 0) return k === 0 ? 1 : 0;
+                    if (q === 1) return k === n ? 1 : 0;
+                    // use multiplicative formula for stability
+                    let c = choose(n, k);
+                    return c * Math.pow(q, k) * Math.pow(1 - q, n - k);
+                }
+
+                // Simulate one trajectory: returns final score S = 2*K - n
+                function simulateTrajectory(n, m, q) {
+                    let secureCount = 0;
+                    for (let i = 0; i < n; i++) {
+                        // week secure with probability q
+                        if (Math.random() < q) secureCount++;
+                    }
+                    return 2 * secureCount - n;
+                }
+
+                function runSimulation() {
+                    const n = parseInt(document.getElementById('inp-n').value, 10);
+                    const m = parseInt(document.getElementById('inp-m').value, 10);
+                    const p = parseFloat(document.getElementById('inp-p').value);
+                    const T = parseInt(document.getElementById('inp-trials').value, 10);
+                    if (isNaN(n) || isNaN(m) || isNaN(p) || isNaN(T) || n < 1 || m < 1 || p < 0 || p > 1 || T < 1) {
+                        alert('Please enter valid parameters.');
+                        return;
+                    }
+                    const q = secureProb(p, m);
+                    // possible scores from -n to n step 2 -> map index by (s + n)/2
+                    const bins = new Array(n + 1).fill(0); // index k = number of secure weeks
+                    for (let t = 0; t < T; t++) {
+                        // simulate K directly by n Bernoulli(q)
+                        let k = 0;
+                        for (let i = 0; i < n; i++) if (Math.random() < q) k++;
+                        bins[k]++;
+                    }
+
+                    // prepare theoretical pmf and render
+                    const pmf = new Array(n + 1).fill(0);
+                    for (let k = 0; k <= n; k++) pmf[k] = binomPMF(n, k, q);
+
+                    renderResults(n, bins, pmf, T);
+                }
+
+                function renderResults(n, bins, pmf, T) {
+                    const tbody = document.querySelector('#results-table tbody');
+                    tbody.innerHTML = '';
+                    const canvas = document.getElementById('hist-canvas');
+                    const ctx = canvas.getContext('2d');
+                    // Make the drawing buffer match displayed size for crispness
+                    const dpr = window.devicePixelRatio || 1;
+                    const dispW = canvas.clientWidth || 960;
+                    const dispH = parseInt(canvas.style.height, 10) || 220;
+                    canvas.width = Math.round(dispW * dpr);
+                    canvas.height = Math.round(dispH * dpr);
+                    // scale drawing so coordinates are in CSS pixels
+                    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+                    // compute max for scaling
+                    const maxCount = Math.max(...bins, 1);
+                    // clear canvas
+                    ctx.clearRect(0, 0, dispW, dispH);
+                    // draw axes
+                    const padding = 40;
+                    const w = dispW - padding * 2;
+                    const h = dispH - padding * 2;
+                    // draw bars for empirical counts
+                    const barWidth = (w / bins.length) * 0.75;
+                    for (let k = 0; k <= n; k++) {
+                        const s = 2 * k - n; // score
+                        const count = bins[k];
+                        const x = padding + k * (w / bins.length) + (w / bins.length - barWidth) / 2;
+                        const barH = (count / maxCount) * h;
+                        // empirical bar
+                        ctx.fillStyle = '#2b6df6';
+                        ctx.fillRect(x, padding + (h - barH), barWidth, barH);
+                        // theoretical overlay: draw a thin red line at expected count = T * pmf[k]
+                        const expected = T * pmf[k];
+                        const yExp = padding + (h - (expected / maxCount) * h);
+                        ctx.strokeStyle = '#e84118';
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.moveTo(x, yExp);
+                        ctx.lineTo(x + barWidth, yExp);
+                        ctx.stroke();
+                        // label below
+                        ctx.fillStyle = '#111';
+                        ctx.font = '12px sans-serif';
+                        ctx.textAlign = 'center';
+                        ctx.fillText(s.toString(), x + barWidth / 2, padding + h + 16);
+
+                        // table row
+                        const tr = document.createElement('tr');
+                        const tdS = document.createElement('td'); tdS.textContent = s; tdS.style.padding = '6px 8px'; tdS.style.color = '#111';
+                        const tdCount = document.createElement('td'); tdCount.style.textAlign = 'right'; tdCount.textContent = count; tdCount.style.color = '#111';
+                        const tdEmpP = document.createElement('td'); tdEmpP.style.textAlign = 'right'; tdEmpP.textContent = (count / T).toFixed(4); tdEmpP.style.color = '#111';
+                        const tdTheoP = document.createElement('td'); tdTheoP.style.textAlign = 'right'; tdTheoP.textContent = pmf[k].toExponential(3); tdTheoP.style.color = '#111';
+                        const tdExpCount = document.createElement('td'); tdExpCount.style.textAlign = 'right'; tdExpCount.textContent = (T * pmf[k]).toFixed(2); tdExpCount.style.color = '#111';
+                        tr.appendChild(tdS); tr.appendChild(tdCount); tr.appendChild(tdEmpP); tr.appendChild(tdTheoP); tr.appendChild(tdExpCount);
+                        tbody.appendChild(tr);
+                    }
+
+                    // draw axis labels
+                    ctx.fillStyle = '#111';
+                    ctx.font = '13px sans-serif';
+                    ctx.textAlign = 'left';
+                    ctx.fillText('Empirical counts (blue) with theoretical expected counts (red lines)', padding, 16);
+                    // y-axis ticks
+                    ctx.textAlign = 'right';
+                    for (let i = 0; i <= 4; i++) {
+                        const y = padding + i * (h / 4);
+                        const val = Math.round((1 - i / 4) * maxCount);
+                        ctx.fillText(val.toString(), padding - 6, y + 4);
+                        ctx.beginPath(); ctx.strokeStyle = '#eee'; ctx.moveTo(padding, y); ctx.lineTo(padding + w, y); ctx.stroke();
+                    }
+                }
+
+                document.getElementById('btn-run').addEventListener('click', runSimulation);
+                document.getElementById('btn-clear').addEventListener('click', function () {
+                    document.querySelector('#results-table tbody').innerHTML = '';
+                    const ctx = document.getElementById('hist-canvas').getContext('2d');
+                    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                });
+
+                // Auto-run a default simulation on page load
+                window.addEventListener('load', function () {
+                    // small delay to ensure layout ready
+                    setTimeout(runSimulation, 300);
+                });
+            </script>
             <!-- From Uiverse.io by mobinkakei --> 
              <div class="nav-buttons">
              <a href="sixth_homework.html">

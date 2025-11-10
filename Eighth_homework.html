@@ -5,6 +5,13 @@
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
         <link rel="stylesheet" href="homework_Style.css" />
+        <script>
+            window.MathJax = {
+                tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+                svg: { fontCache: 'global' }
+            };
+        </script>
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
         <noscript><link rel="stylesheet" href="noscript.css" /></noscript>
     </head>
     <body>
@@ -41,8 +48,76 @@
         </header>
         <main>
             <section>
-                <h2>has not yet been assigned</h2>
-                    
+                <h2>Analogies with the Bernoulli LLN simulation — mathematical discussion</h2>
+
+                <p>
+                    This page compares the current server-security / random-walk homework with the previous homework based on a Bernoulli-process simulation illustrating the Law of Large Numbers (LLN). Both exercises simulate independent trials and use counts of "successes" to build empirical distributions; however they differ in outcome mapping and the interpretation of a trial's success probability.
+                </p>
+
+                <h3>Shared foundation: Bernoulli trials and binomial counts</h3>
+                <p>
+                    Both problems rest on independent Bernoulli trials. In the LLN exercise each trial typically records a success with probability $p$ (so after $n$ trials the number of successes $K$ follows $\mathrm{Binomial}(n,p)$). In the server-week model each week is "secure" iff none of the $m$ attackers succeed, so the weekly secure probability is
+                    $$q=(1-p)^m,$$
+                    and the number of secure weeks $K$ follows $\mathrm{Binomial}(n,q)$. The final total score used in the random-walk analogy is
+                    $$S = 2K - n,$$
+                    which maps the binomial count $K\in\{0,1,\dots,n\}$ to scores $S\in\{-n,-n+2,\dots,n\}$.
+                </p>
+
+                <h3>Binomial coefficients, Pascal's triangle and the PMF</h3>
+                <p>
+                    The binomial probability mass function is built from the binomial coefficients:
+                    $$\mathbb{P}(K=k)=\binom{n}{k}q^{k}(1-q)^{n-k},\qquad k=0,\dots,n.$$ 
+                    Combinatorially, $\binom{n}{k}$ counts how many length-$n$ outcomes contain exactly $k$ secure weeks. Pascal's triangle lists these coefficients: the $n$-th row contains $\binom{n}{0},\binom{n}{1},\dots,\binom{n}{n}$, and each entry is the sum of the two above.
+                </p>
+
+                <h3>Binomial expansion and generating functions</h3>
+                <p>
+                    The binomial theorem explains why the PMF weights sum to 1. For any $a,b$,
+                    $$(a+b)^n=\sum_{k=0}^n \binom{n}{k} a^{n-k} b^k.$$ Setting $a=1-q$ and $b=q$ yields
+                    $$1=(q + (1-q))^n = \sum_{k=0}^n \binom{n}{k} q^k (1-q)^{n-k},$$
+                    which is the normalization of the binomial PMF.
+                </p>
+
+                <h3>Random-walk view and linear transformations</h3>
+                <p>
+                    Mapping $K\mapsto S=2K-n$ turns the binomial distribution into a symmetric lattice of possible walk scores. Expectations transform accordingly:
+                    $$\mathbb{E}[K]=nq,\qquad \mathrm{Var}(K)=nq(1-q),$$
+                    so
+                    $$\mathbb{E}[S]=2\mathbb{E}[K]-n = n(2q-1),\qquad \mathrm{Var}(S)=4\,\mathrm{Var}(K)=4nq(1-q).$$
+                    For large $n$, by the Central Limit Theorem the standardized $K$ (and thus $S$) is approximately normal, which is why histograms from simulation appear bell-shaped for moderately large $n$.
+                </p>
+
+                <h3>Similarities and differences with the previous LLN simulation</h3>
+                <ul>
+                    <li>Similarity: both rely on many independent trials and binomial combinatorics to approximate probabilities and expectations; both show convergence of empirical frequencies to theoretical probabilities (LLN).</li>
+                    <li>Difference: the previous homework directly simulated Bernoulli($p$) trials per basic unit (trial = success/failure). Here a week itself is a composite event (no attacker succeeds), so the effective per-week success probability $q=(1-p)^m$ depends on $m$ and $p$ nonlinearly.</li>
+                    <li>Difference in observables: LLN focuses on relative frequency $K/n$ approaching $p$, while the random-walk framing studies sums of $\pm1$ variables (equivalently linear transforms of $K$) and is naturally interpreted as a discrete-time walk.</li>
+                </ul>
+
+                <h3>Combinatorial identities and Fibonacci connections</h3>
+                <p>
+                    Beyond the direct binomial/coefficient facts there are several elegant combinatorial relationships linking Pascal's triangle to other sequences such as the Fibonacci numbers. One well-known identity is that sums of entries along the shallow diagonals of Pascal's triangle produce Fibonacci numbers. Concretely,
+                    $$F_n = \sum_{k\ge 0} \binom{n-1-k}{k},$$
+                    where $F_n$ is the $n$-th Fibonacci number (with appropriate indexing). This identity can be shown by induction and by combinatorial interpretations (tilings with dominoes and squares).
+                </p>
+
+                <p>
+                    Another useful identity (Vandermonde's convolution) relates to sums of products of binomial coefficients and often appears when combining independent binomial variables or conditioning on a count:
+                    $$\sum_{k} \binom{r}{k}\binom{s}{n-k}=\binom{r+s}{n}.$$ 
+                    These identities are useful when decomposing probabilities in multi-stage experiments (for example conditioning on the number of breaches in a subset of weeks).
+                </p>
+
+                <h3>Practical implications and suggested experiments</h3>
+                <ul>
+                    <li>Try varying $m$ and $p$ while holding $n$ fixed to observe how the effective weekly secure probability $q=(1-p)^m$ changes the histogram shape and the mean of $S$. For small $q$ the distribution concentrates on low $K$ (negative $S$), for $q\approx 0.5$ it centers near $0$.</li>
+                    <li>Compare empirical frequencies of $K$ to the theoretical $\mathrm{Binomial}(n,q)$ PMF and plot their difference (absolute error) versus $T$ (number of simulated trajectories) to visualize LLN convergence rates $O(1/\sqrt{T})$ in probability.</li>
+                    <li>Compute the cumulants: for binomial $K$ the skewness and kurtosis formulas show how the distribution departs from normality for small $n$; check how these approach the Gaussian values as $n$ grows.</li>
+                </ul>
+
+                <h3>Summary</h3>
+                <p>
+                    Both homeworks are concrete explorations of the same probabilistic building blocks: independent Bernoulli trials and binomial counting. The random-walk perspective re-encodes binomial counts into symmetric lattice values and highlights linear transformations of counts, while the LLN experiment emphasizes convergence of empirical proportions. Pascal's triangle, binomial coefficients and the binomial theorem provide the exact combinatorial backbone; deeper combinatorial identities (e.g., Vandermonde's convolution, diagonal sums producing Fibonacci numbers) reveal broader connections between counting, algebra and classical integer sequences.
+                </p>
             </section>
             <!-- From Uiverse.io by mobinkakei --> 
              <div class="nav-buttons">
