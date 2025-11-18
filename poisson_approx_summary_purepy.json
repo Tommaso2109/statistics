@@ -1,0 +1,12 @@
+{
+  "T": 1.0,
+  "lambda": 3.5,
+  "n": 5000,
+  "p": 0.0007,
+  "trials": 20000,
+  "counts_mean": 3.51815,
+  "counts_var": 3.4880705774994656,
+  "theor_mean": 3.5,
+  "theor_var": 3.5,
+  "realization_event_count": 7
+}

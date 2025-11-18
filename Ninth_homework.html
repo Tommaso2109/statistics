@@ -40,9 +40,78 @@
 
         </header>
         <main>
-            <section>
-                <h2>has not yet been assigned</h2>
-                    
+            <section id="probability-content">
+                <h2>Probability: interpretations, axioms, measure-theoretic view, and key derivations</h2>
+
+                <h3>1. Main interpretations of probability</h3>
+                <p>Probability has several complementary interpretations. The most common are:</p>
+                <ul>
+                    <li><strong>Classical (Laplace)</strong>: Probability is the ratio of favorable outcomes to equally possible outcomes. Works well for symmetric, finite experiments (e.g., fair dice), but fails when 'equally likely' is unclear.</li>
+                    <li><strong>Frequentist</strong>: Probability of an event is its long-run relative frequency in repeated identical trials. Rooted in empirical repeatability; it is inherently tied to limiting behavior as the number of trials → ∞.</li>
+                    <li><strong>Bayesian (Subjective)</strong>: Probability represents rational degrees of belief given available information. It is updated with Bayes' rule when new data arrive.</li>
+                    <li><strong>Geometric</strong>: Probability derived from geometric measures (length, area, volume) — e.g., probability a random point falls in a subregion equals subregion area divided by total area. Requires an underlying continuous uniform model.</li>
+                    <li><strong>Propensity/Physical</strong>: Probability as a physical tendency or disposition of a system to produce an outcome (often used in the philosophy of science).</li>
+                </ul>
+
+                <h3>2. Axiomatic approach and how it resolves conceptual inconsistencies</h3>
+                <p>The Kolmogorov axioms provide a neutral mathematical framework that accommodates all the above interpretations and removes many conceptual ambiguities:</p>
+                <ul>
+                    <li>Non-negativity: For any event A, P(A) ≥ 0.</li>
+                    <li>Normalization: P(Ω) = 1 for the sample space Ω.</li>
+                    <li>Countable additivity: For any sequence of pairwise disjoint events A1, A2, ..., P(∪_{i=1}^∞ Ai) = Σ_{i=1}^∞ P(Ai).</li>
+                </ul>
+                <p>Why this helps:</p>
+                <ul>
+                    <li>The axioms are interpretation-agnostic. They do not prescribe what probability "is"; they only state how any reasonable probability assignment must behave. So classical, frequentist, Bayesian and geometric viewpoints become different ways to construct a function P that satisfies these axioms.</li>
+                    <li>Ambiguities like "equally likely" are replaced by a requirement that the constructed probability measure satisfy the axioms — leaving model-building choices to the practitioner while keeping reasoning consistent.</li>
+                    <li>Conflicts between interpretations are thereby partially resolved: disagreements are often about model/measure choice (priors, sample space, symmetry), not about the formal rules for manipulating probabilities.</li>
+                </ul>
+
+                <h3>3. Probability theory and measure theory</h3>
+                <p>Kolmogorov's axioms are a special case of measure theory. The correspondence is:</p>
+                <ul>
+                    <li><strong>Sample space (Ω)</strong>: the set of all outcomes.</li>
+                    <li><strong>Sigma-algebra (𝓕)</strong>: a collection of subsets of Ω (events) closed under complement and countable unions. This is required so probabilities are well-defined under limits and complements.</li>
+                    <li><strong>Probability measure (P)</strong>: a function P: 𝓕 → [0,1] that satisfies the measure axioms (non-negativity, P(Ω)=1, countable additivity). In measure-theoretic language, P is a probability measure.</li>
+                    <li><strong>Measurable functions / Random variables</strong>: A random variable X is a measurable map X: (Ω,𝓕) → (ℝ,ℬ) where ℬ is the Borel sigma-algebra on ℝ. Measurability guarantees that sets like {ω : X(ω) ≤ x} are events (in 𝓕), so we can assign probabilities to statements about X.</li>
+                </ul>
+                <p>This view brings powerful tools (integration, convergence theorems) into probability: expectations are integrals with respect to P, distributions are pushforward measures, and limit theorems use measure-theoretic convergence modes (almost sure, in probability, in L^p, in distribution).</p>
+
+                <h3>4. Derivations from the axioms</h3>
+                <div class="subitems" style="margin-left:1.5em">
+                <h4>4.1 Subadditivity (finite and countable)</h4>
+                <p>Statement: For any sequence of events A1, A2, ... (finite or countable),</p>
+                <p><strong>P(∪_{i} A_i) ≤ Σ_i P(A_i).</strong></p>
+                <p>Proof (sketch): Define disjoint sets B1 = A1, B2 = A2 \ A1, B3 = A3 \ (A1 ∪ A2), and in general</p>
+                <p>B_n = A_n \ (A1 ∪ ... ∪ A_{n-1}). Then the B_n are pairwise disjoint and ∪_n B_n = ∪_n A_n. By countable additivity,</p>
+                <p>P(∪_n A_n) = Σ_n P(B_n).</p>
+                <p>But B_n ⊆ A_n, so by monotonicity (which follows from the axioms), P(B_n) ≤ P(A_n). Summing gives</p>
+                <p>P(∪_n A_n) = Σ_n P(B_n) ≤ Σ_n P(A_n).</p>
+                <p>This proves countable subadditivity; the finite case is a direct special case.</p>
+
+                <h4>4.2 Inclusion–exclusion principle</h4>
+                <p>For two events A and B the exact formula is</p>
+                <p><strong>P(A ∪ B) = P(A) + P(B) − P(A ∩ B).</strong></p>
+                <p>Proof: Write A ∪ B as the disjoint union A\B, B\A, and A∩B. Then by additivity,</p>
+                <p>P(A ∪ B) = P(A\B) + P(B\A) + P(A ∩ B).</p>
+                <p>Also P(A) = P(A\B) + P(A ∩ B), and P(B) = P(B\A) + P(A ∩ B). Adding P(A)+P(B) gives</p>
+                <p>P(A) + P(B) = P(A\B) + P(B\A) + 2P(A ∩ B).</p>
+                <p>Rearrange to obtain the formula above.</p>
+
+                <p>For three events the formula is</p>
+                <p>P(A ∪ B ∪ C) = P(A) + P(B) + P(C) − P(A∩B) − P(A∩C) − P(B∩C) + P(A∩B∩C).</p>
+                <p>And the general inclusion–exclusion principle for finitely many events alternates sums of probabilities of intersections of 1, 2, 3, ... events. It is derived by counting contributions of each elementary outcome to the union and correcting for over-counting.</p>
+
+                </div>
+
+                <h3>5. Quick examples and remarks</h3>
+                <ul>
+                    <li>Example (subadditivity): For events A and B, subadditivity says P(A∪B) ≤ P(A)+P(B). Inclusion–exclusion refines this to an equality with subtraction of the overlap.</li>
+                    <li>Practical note: The axioms do not tell you which sigma-algebra 𝓕 to choose or which measure P to use — model building (choice of sample space, sigma-algebra, and measure) encodes the interpretation (frequentist experiment, Bayesian prior, geometric uniformity, …).</li>
+                </ul>
+
+                <p><em>References / further reading:</em> any standard probability text or measure-theory book (e.g., Williams, Billingsley, or Durrett) for formal measure-theoretic foundations and many worked examples.</p>
+
             </section>
             <!-- From Uiverse.io by mobinkakei --> 
              <div class="nav-buttons">

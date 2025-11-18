@@ -40,10 +40,256 @@
 
         </header>
         <main>
-            <section>
-                <h2>has not yet been assigned</h2>
-                    
+            <section id="poisson-approx">
+                <h2>Simulation: Bernoulli approximation of a Poisson process</h2>
+
+                <p>This page contains an interactive simulation of the Bernoulli approximation to a homogeneous Poisson process on the interval [0, T]. You can set parameters (rate λ, interval length T, number of subintervals n and number of trials) and run the simulation directly in your browser. Results include empirical mean/variance of counts and histograms for counts and interarrival times.</p>
+
+                <div class="sim-controls">
+                    <label>λ (rate): <input type="number" id="lambda" step="0.1" value="3.5"></label>
+                    <label>T: <input type="number" id="T" step="0.1" value="1"></label>
+                    <label>n (subintervals): <input type="number" id="n" step="1" value="5000"></label>
+                    <label>trials: <input type="number" id="trials" step="1" value="2000"></label>
+                    <button id="runBtn">Run simulation</button>
+                    <span id="status" style="margin-left:1em;color:#666"></span>
+                </div>
+
+                <h3>Numeric results</h3>
+                <div id="results">
+                    <p>Run a simulation to see results here.</p>
+                </div>
+
+                <h3>Histograms</h3>
+                <div style="max-width:800px; width:100%;">
+                    <canvas id="countsHist" width="700" height="200" style="border:1px solid #ccc; width:100%; max-width:700px; height:220px; display:block"></canvas>
+                    <canvas id="iaHist" width="700" height="200" style="border:1px solid #ccc; margin-top:12px; width:100%; max-width:700px; height:220px; display:block"></canvas>
+                </div>
+
+                <div id="hist-explanations" style="max-width:800px; width:100%; margin-top:10px; color:#222;">
+                    <h4>What these plots show</h4>
+                    <p><strong>Counts histogram:</strong> the top plot shows the empirical distribution of the number of events observed in the interval [0, T] across all trials. The blue gradient bars represent the empirical probability per bin. The red curve and markers overlay the theoretical Poisson probability mass function with mean λT — agreement indicates the Binomial(n, p) approximation is close to Poisson(λT).</p>
+                    <p><strong>Interarrival histogram:</strong> the lower plot displays empirical interarrival times from one example realization (successes placed uniformly within their subintervals). The red curve overlays the theoretical Exponential(pdf) with rate λ. To estimate the exponential law accurately you should collect many interarrival times across many realizations (or directly simulate exponential interarrivals).</p>
+                    <p style="font-size:0.9em;color:#ffffff">Notes: small discrepancies can come from finite-sample variability, binning choices, and the finite subinterval width n (for very small n the approximation worsens). Increasing trials and n (while keeping p = λT/n small) improves agreement.</p>
+                </div>
+
+                <p style="font-size:0.9em;color:#ffffff">Notes: The browser-based simulation can be computationally heavy if you set <code>trials</code> and <code>n</code> very large. Defaults are conservative but representative. For large-scale experiments use the Python scripts in the repository.</p>
             </section>
+
+            <script>
+            // Browser-side simulation script
+            (function(){
+                function mean(arr){ return arr.reduce((a,b)=>a+b,0)/arr.length; }
+                function variance(arr, mu){ mu = (mu===undefined)? mean(arr): mu; return arr.reduce((s,x)=>s+(x-mu)*(x-mu),0)/arr.length; }
+
+                const runBtn = document.getElementById('runBtn');
+                const status = document.getElementById('status');
+                const resultsDiv = document.getElementById('results');
+                const countsCanvas = document.getElementById('countsHist');
+                const iaCanvas = document.getElementById('iaHist');
+
+                function drawHistogram(canvas, data, options){
+                    // make canvas responsive: size to CSS layout and use devicePixelRatio for crisp rendering
+                    const ctx = canvas.getContext('2d');
+                    const dpr = window.devicePixelRatio || 1;
+                    const rect = canvas.getBoundingClientRect();
+                    const w = rect.width;
+                    const h = rect.height;
+                    canvas.width = Math.round(w * dpr);
+                    canvas.height = Math.round(h * dpr);
+                    canvas.style.width = w + 'px';
+                    canvas.style.height = h + 'px';
+                    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                    ctx.clearRect(0,0,w,h);
+                    if(!data || data.length===0) return;
+                    const pad = 40;
+                    const bins = options.bins || Math.min(60, Math.ceil(Math.sqrt(data.length)));
+
+                    // compute min/max and histogram
+                    let min = Math.min(...data), max = Math.max(...data);
+                    if(min === max){ min = min - 0.5; max = max + 0.5; }
+                    const binWidth = (max - min + 1e-12)/bins;
+                    const counts = new Array(bins).fill(0);
+                    data.forEach(v=>{ const i = Math.min(bins-1, Math.floor((v-min)/binWidth)); counts[i]++; });
+
+                    // convert to probability mass / density depending on type
+                    const probs = new Array(bins);
+                    for(let i=0;i<bins;i++) probs[i] = counts[i] / data.length; // probability mass per bin
+
+                    // find max for scaling
+                    const maxVal = Math.max(...probs);
+
+                    // draw background grid
+                    ctx.fillStyle = '#fff'; ctx.fillRect(0,0,w,h);
+                    ctx.strokeStyle = '#eee';
+                    ctx.lineWidth = 1;
+                    const gridLines = 4;
+                    for(let g=0; g<=gridLines; g++){
+                        const y = pad + g*(h-2*pad)/gridLines;
+                        ctx.beginPath(); ctx.moveTo(pad, y); ctx.lineTo(w-pad, y); ctx.stroke();
+                    }
+
+                    // draw bars with gradient
+                    const bw = (w - 2*pad) / bins;
+                    const grad = ctx.createLinearGradient(0, pad, 0, h-pad);
+                    grad.addColorStop(0, '#7fb3ff'); grad.addColorStop(1, '#1f6fbf');
+                    for(let i=0;i<bins;i++){
+                        const barH = (probs[i] / maxVal) * (h - 2*pad);
+                        const x = pad + i * bw;
+                        const y = h - pad - barH;
+                        ctx.fillStyle = grad;
+                        // rounded top for visual
+                        ctx.beginPath();
+                        ctx.moveTo(x, h-pad);
+                        ctx.lineTo(x, y+4);
+                        ctx.quadraticCurveTo(x + bw/2, y, x + bw, y+4);
+                        ctx.lineTo(x + bw, h-pad);
+                        ctx.closePath();
+                        ctx.fill();
+                        // subtle border
+                        ctx.strokeStyle = 'rgba(0,0,0,0.06)'; ctx.stroke();
+                    }
+
+                    // axes
+                    ctx.strokeStyle = '#333'; ctx.lineWidth = 1.2;
+                    ctx.beginPath(); ctx.moveTo(pad, pad); ctx.lineTo(pad, h-pad); ctx.lineTo(w-pad, h-pad); ctx.stroke();
+
+                    // y-axis ticks and labels
+                    ctx.fillStyle = '#333'; ctx.font = '12px sans-serif';
+                    const yticks = 4;
+                    for(let t=0;t<=yticks;t++){
+                        const val = (1 - t/yticks) * maxVal;
+                        const y = pad + t*(h-2*pad)/yticks;
+                        ctx.fillStyle = '#666'; ctx.fillText(val.toFixed(3), 4, y+4);
+                    }
+
+                    // x-axis ticks
+                    const xticks = Math.min(8, bins);
+                    for(let t=0;t<=xticks;t++){
+                        const i = Math.round(t * (bins-1)/xticks);
+                        const x = pad + i * bw + bw/2;
+                        const v = min + (i+0.5)*binWidth;
+                        ctx.fillStyle = '#666'; ctx.fillText((v).toFixed(2), x-12, h-6);
+                    }
+
+                    // overlays: poisson pmf (for discrete counts) or exponential pdf (for interarrivals)
+                    if(options.overlay === 'poisson' && typeof options.mu === 'number'){
+                        const mu = options.mu;
+                        // compute Poisson pmf for k values corresponding to bin centers
+                        const pmf = [];
+                        // we can compute starting p0 then recursive
+                        // find k for each bin center
+                        for(let i=0;i<bins;i++){
+                            const v = Math.round(min + (i+0.5)*binWidth);
+                            pmf.push(v);
+                        }
+                        // compute pmf table up to max k
+                        const kmax = Math.max(...pmf);
+                        const pvals = new Array(kmax+1).fill(0);
+                        pvals[0] = Math.exp(-mu);
+                        for(let k=1;k<=kmax;k++) pvals[k] = pvals[k-1] * mu / k;
+                        // draw curve scaled to maxVal
+                        ctx.beginPath();
+                        for(let i=0;i<bins;i++){
+                            const k = pmf[i];
+                            const prob = (k>=0 && k<pvals.length) ? pvals[k] : 0;
+                            const sx = pad + i*bw + bw/2;
+                            const sy = h - pad - (prob / maxVal) * (h - 2*pad);
+                            if(i===0) ctx.moveTo(sx, sy); else ctx.lineTo(sx, sy);
+                        }
+                        ctx.strokeStyle = '#ff6b6b'; ctx.lineWidth = 2; ctx.stroke();
+                        // draw markers
+                        for(let i=0;i<bins;i++){
+                            const k = pmf[i]; const prob = (k>=0 && k<pvals.length) ? pvals[k] : 0;
+                            const sx = pad + i*bw + bw/2; const sy = h - pad - (prob / maxVal) * (h - 2*pad);
+                            ctx.fillStyle = '#ff6b6b'; ctx.beginPath(); ctx.arc(sx, sy, 3, 0, 2*Math.PI); ctx.fill();
+                        }
+                    }
+                    if(options.overlay === 'exponential' && typeof options.lambda === 'number'){
+                        const lambda = options.lambda;
+                        // compute density values and scale to maxVal
+                        ctx.beginPath();
+                        const steps = Math.min(200, bins*4);
+                        for(let s=0;s<=steps;s++){
+                            const xval = min + (s/steps)*(max-min);
+                            const pdf = (xval>=0) ? lambda * Math.exp(-lambda * xval) : 0;
+                            const sx = pad + (s/steps)*(w-2*pad);
+                            const sy = h - pad - (pdf / maxVal) * (h - 2*pad);
+                            if(s===0) ctx.moveTo(sx, sy); else ctx.lineTo(sx, sy);
+                        }
+                        ctx.strokeStyle = '#ff6b6b'; ctx.lineWidth = 2; ctx.stroke();
+                    }
+                }
+
+                runBtn.addEventListener('click', function(){
+                    const lambda = parseFloat(document.getElementById('lambda').value);
+                    const T = parseFloat(document.getElementById('T').value);
+                    const n = parseInt(document.getElementById('n').value,10);
+                    const trials = parseInt(document.getElementById('trials').value,10);
+                    if(isNaN(lambda)||isNaN(T)||isNaN(n)||isNaN(trials) || n<=0 || trials<=0){ alert('Please enter valid numeric parameters.'); return; }
+                    const p = lambda*T/n;
+                    resultsDiv.innerHTML = '<p>Running simulation...</p>';
+                    status.textContent = '';
+
+                    // Run simulation with simple loops. Keep UI responsive in chunks.
+                    const counts = new Array(trials).fill(0);
+                    let trial = 0;
+
+                    function runChunk(){
+                        const chunk = 20; // number of trials per chunk to avoid blocking too long
+                        const end = Math.min(trials, trial + chunk);
+                        for(; trial<end; trial++){
+                            let c = 0;
+                            for(let i=0;i<n;i++){
+                                if(Math.random() < p) c++;
+                            }
+                            counts[trial] = c;
+                        }
+                        status.textContent = `Progress: ${Math.round(100*trial/trials)}%`;
+                        if(trial < trials){
+                            // yield back to event loop
+                            setTimeout(runChunk, 0);
+                        } else {
+                            status.textContent = 'Done';
+                            displayResults(lambda, T, n, trials, p, counts);
+                        }
+                    }
+                    runChunk();
+                });
+
+                function displayResults(lambda, T, n, trials, p, counts){
+                    const empMean = mean(counts);
+                    const empVar = variance(counts, empMean);
+                    const theor = lambda * T;
+                    const html = [];
+                    html.push(`<p>Parameters: T=${T}, λ=${lambda}, n=${n}, p=λT/n=${p.toExponential(3)}, trials=${trials}</p>`);
+                    html.push('<ul>');
+                    html.push(`<li>Empirical mean of counts = ${empMean.toFixed(6)}</li>`);
+                    html.push(`<li>Empirical variance of counts = ${empVar.toFixed(6)}</li>`);
+                    html.push(`<li>Theoretical (Poisson) mean = variance = λT = ${theor.toFixed(6)}</li>`);
+                    html.push('</ul>');
+                    resultsDiv.innerHTML = html.join('\n');
+
+                    drawHistogram(countsCanvas, counts, {bins: Math.min(60, Math.max(10, Math.ceil(Math.sqrt(counts.length)))), overlay: 'poisson', mu: theor});
+
+                    // Build interarrival times from one sample realization by placing successes uniformly in subintervals
+                    // We'll generate one realization separately
+                    const indices = [];
+                    for(let i=0;i<n;i++){ if(Math.random() < p) indices.push(i); }
+                    const times = indices.map(i => (i + Math.random())*(T/n)).sort((a,b)=>a-b);
+                    const interarrivals = [];
+                    if(times.length>0){ interarrivals.push(times[0]); for(let k=1;k<times.length;k++) interarrivals.push(times[k]-times[k-1]); }
+                    drawHistogram(iaCanvas, interarrivals, {bins: Math.min(40, Math.max(6, Math.ceil(Math.sqrt(interarrivals.length||1)))), overlay: 'exponential', lambda: lambda});
+                    // show interarrival summary
+                    if(interarrivals.length>0){
+                        const mu = mean(interarrivals); const v = variance(interarrivals, mu);
+                        const pHtml = `<p>Example realization: events=${times.length}; empirical mean interarrival=${mu.toFixed(6)}; theoretical mean=1/λ=${(1/lambda).toFixed(6)}</p>`;
+                        resultsDiv.innerHTML += pHtml;
+                    } else {
+                        resultsDiv.innerHTML += '<p>Example realization produced no events (very small expected count for this run).</p>';
+                    }
+                }
+            })();
+            </script>
             <!-- From Uiverse.io by mobinkakei --> 
              <div class="nav-buttons">
              <a href="Ninth_homework.html">
