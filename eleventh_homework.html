@@ -1,0 +1,231 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <title>Tommaso Rinaldi 1983126</title>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+        <link rel="stylesheet" href="homework_Style.css" />
+        <noscript><link rel="stylesheet" href="noscript.css" /></noscript>
+    </head>
+    <body>
+        <header class="main-header">
+			 <div class="profile-photo">
+                <img src="profile_pic.jpg" alt="Profile Photo">
+            </div>
+            
+            <div class="header-title">
+                <h1>Statistics Homework</h1>
+                <h2>Eleventh Homework</h2>  
+            </div>
+
+            <div class="header-home-btn">
+                <a href="index.html">
+                    <button class="Btn">
+    
+                        <div class="sign"><svg xmlns="http://www.w3.org/2000/svg" 
+                            viewBox="0 0 24 24" 
+                            width="240" 
+                            height="240" 
+                            fill="black">
+                        <path d="M12 3l10 8h-3v9a1 1 0 0 1-1 1h-5v-6H11v6H6a1 1 0 0 1-1-1v-9H2l">
+
+                        </svg>
+                        
+
+                        
+                        <div class="text">HOME</div>
+                    </button>
+                </a>
+            </div>
+
+        </header>
+        <main>
+            <section id="brownian-section">
+                <h2>Brownian Motion (Continuous time &amp; state) — interactive</h2>
+                <p>This interactive demonstrates a standard Brownian motion (Wiener process) on [0,T].
+                We simulate by dividing [0,T] into <em>n</em> steps of size Δt = T/n, and generate independent normal increments ΔW ~ N(0, Δt) using the Box–Muller transform (uniform → normal). Paths are constructed by cumulative summation of increments; multiple sample paths can be plotted and a histogram of increments is shown with the theoretical Normal overlay.</p>
+
+                <div class="sim-controls" style="margin-bottom:12px">
+                    <label> T: <input type="number" id="bm_T" value="1" step="0.1" style="width:80px"></label>
+                    <label> n (steps): <input type="number" id="bm_n" value="500" step="1" style="width:80px"></label>
+                    <label> paths: <input type="number" id="bm_paths" value="5" step="1" style="width:60px"></label>
+                    <label> σ (volatility): <input type="number" id="bm_sigma" value="1" step="0.1" style="width:80px"></label>
+                    <button id="bm_run">Simulate</button>
+                    <span id="bm_status" style="margin-left:8px;color:#666"></span>
+                </div>
+
+                <div style="max-width:900px; width:100%">
+                    <canvas id="bm_canvas" style="width:100%; height:300px; border:1px solid #ccc; display:block"></canvas>
+                    <canvas id="bm_ia" style="width:100%; height:180px; border:1px solid #ccc; display:block; margin-top:10px"></canvas>
+                </div>
+
+                <div id="bm_explain" style="max-width:900px; color:#222; margin-top:8px">
+                    <p><strong>Notes:</strong> Standard Brownian motion W(t) has independent increments and W(t)-W(s) ~ N(0, t-s). We simulate increments with variance σ²Δt by generating normals via Box–Muller from Uniform(0,1) pairs.</p>
+                </div>
+            </section>
+
+            <!-- From Uiverse.io by mobinkakei --> 
+             <div class="nav-buttons">
+             <a href="tenth_homework.html">
+                <button class="cta mirrored">
+                    <span class="second">
+                        <svg
+                            width="50px"
+                            height="20px"
+                            viewBox="0 0 66 43"
+                            version="1.1"
+                            xmlns="http://www.w3.org/2000/svg"
+                            xmlns:xlink="http://www.w3.org/1999/xlink"
+                        >
+                            <g
+                                id="arrow"
+                                stroke="none"
+                                stroke-width="1"
+                                fill="none"
+                                fill-rule="evenodd"
+                            >
+                                <path class="one" d="M40.1543933,3.89485454 L43.9763149,0.139296592 C44.1708311,-0.0518420739 44.4826329,-0.0518571125 44.6771675,0.139262789 L65.6916134,20.7848311 C66.0855801,21.1718824 66.0911863,21.8050225 65.704135,22.1989893 C65.7000188,22.2031791 65.6958657,22.2073326 65.6916762,22.2114492 L44.677098,42.8607841 C44.4825957,43.0519059 44.1708242,43.0519358 43.9762853,42.8608513 L40.1545186,39.1069479 C39.9575152,38.9134427 39.9546793,38.5968729 40.1481845,38.3998695 C40.1502893,38.3977268 40.1524132,38.395603 40.1545562,38.3934985 L56.9937789,21.8567812 C57.1908028,21.6632968 57.193672,21.3467273 57.0001876,21.1497035 C56.9980647,21.1475418 56.9959223,21.1453995 56.9937605,21.1432767 L40.1545208,4.60825197 C39.9574869,4.41477773 39.9546013,4.09820839 40.1480756,3.90117456 C40.1501626,3.89904911 40.1522686,3.89694235 40.1543933,3.89485454 Z" fill="#FFFFFF"></path>
+                                <path class="two" d="M20.1543933,3.89485454 L23.9763149,0.139296592 C24.1708311,-0.0518420739 24.4826329,-0.0518571125 24.6771675,0.139262789 L45.6916134,20.7848311 C46.0855801,21.1718824 46.0911863,21.8050225 45.704135,22.1989893 C45.7000188,22.2031791 45.6958657,22.2073326 45.6916762,22.2114492 L24.677098,42.8607841 C24.4825957,43.0519059 24.1708242,43.0519358 23.9762853,42.8608513 L20.1545186,39.1069479 C19.9575152,38.9134427 19.9546793,38.5968729 20.1481845,38.3998695 C20.1502893,38.3977268 20.1524132,38.395603 20.1545562,38.3934985 L36.9937789,21.8567812 C37.1908028,21.6632968 37.193672,21.3467273 37.0001876,21.1497035 C36.9980647,21.1475418 36.9959223,21.1453995 36.9937605,21.1432767 L20.1545208,4.60825197 C19.9574869,4.41477773 19.9546013,4.09820839 20.1480756,3.90117456 C20.1501626,3.89904911 20.1522686,3.89694235 20.1543933,3.89485454 Z" fill="#FFFFFF"></path>
+                                <path class="three" d="M0.154393339,3.89485454 L3.97631488,0.139296592 C4.17083111,-0.0518420739 4.48263286,-0.0518571125 4.67716753,0.139262789 L25.6916134,20.7848311 C26.0855801,21.1718824 26.0911863,21.8050225 25.704135,22.1989893 C25.7000188,22.2031791 25.6958657,22.2073326 25.6916762,22.2114492 L4.67709797,42.8607841 C4.48259567,43.0519059 4.17082418,43.0519358 3.97628526,42.8608513 L0.154518591,39.1069479 C-0.0424848215,38.9134427 -0.0453206733,38.5968729 0.148184538,38.3998695 C0.150289256,38.3977268 0.152413239,38.395603 0.154556228,38.3934985 L16.9937789,21.8567812 C17.1908028,21.6632968 17.193672,21.3467273 17.0001876,21.1497035 C16.9980647,21.1475418 16.9959223,21.1453995 16.9937605,21.1432767 L0.15452076,4.60825197 C-0.0425130651,4.41477773 -0.0453986756,4.09820839 0.148075568,3.90117456 C0.150162624,3.89904911 0.152268631,3.89694235 0.154393339,3.89485454 Z" fill="#FFFFFF"></path>
+                            </g>
+                        </svg>
+                    </span>
+                    <span class="span">PREV</span>
+                </button>
+            </a>
+            </div>
+        </main>
+        <script src="menu.js"></script>
+        <script>
+        (function(){
+            // Box-Muller: return standard normal ~ N(0,1)
+            function boxMuller(){
+                let u=0,v=0;
+                while(u===0) u = Math.random();
+                while(v===0) v = Math.random();
+                const z = Math.sqrt(-2.0*Math.log(u)) * Math.cos(2*Math.PI*v);
+                return z;
+            }
+
+            // responsive canvas helper
+            function prepareCanvas(canvas){
+                const ctx = canvas.getContext('2d');
+                const dpr = window.devicePixelRatio || 1;
+                const rect = canvas.getBoundingClientRect();
+                canvas.width = Math.round(rect.width * dpr);
+                canvas.height = Math.round(rect.height * dpr);
+                canvas.style.width = rect.width + 'px';
+                canvas.style.height = rect.height + 'px';
+                ctx.setTransform(dpr,0,0,dpr,0,0);
+                return ctx;
+            }
+
+            function drawPaths(canvas, paths, T, sigma){
+                const ctx = prepareCanvas(canvas);
+                const rect = canvas.getBoundingClientRect();
+                const w = rect.width, h = rect.height, pad = 40;
+                ctx.clearRect(0,0,w,h);
+                // axes
+                ctx.strokeStyle = '#333'; ctx.lineWidth=1;
+                ctx.beginPath(); ctx.moveTo(pad, pad); ctx.lineTo(pad, h-pad); ctx.lineTo(w-pad, h-pad); ctx.stroke();
+                // time axis labels
+                const steps = paths[0].length - 1;
+                for(let t=0;t<=4;t++){
+                    const x = pad + (w-2*pad)*(t/4);
+                    ctx.fillStyle='#666'; ctx.font='12px sans-serif'; ctx.fillText((T*(t/4)).toFixed(2), x-12, h-8);
+                }
+                // find global min/max
+                let min=Infinity, max=-Infinity;
+                for(const p of paths){ for(const v of p){ if(v<min) min=v; if(v>max) max=v; }}
+                if(min===max){ min -= 1; max += 1; }
+                // draw grid horizontal
+                ctx.strokeStyle='#eee'; ctx.lineWidth=1;
+                for(let i=0;i<=4;i++){
+                    const y = pad + i*(h-2*pad)/4; ctx.beginPath(); ctx.moveTo(pad,y); ctx.lineTo(w-pad,y); ctx.stroke();
+                }
+
+                // draw paths
+                const colors = ['#1f77b4','#ff7f0e','#2ca02c','#d62728','#9467bd','#8c564b'];
+                for(let pi=0; pi<paths.length; pi++){
+                    const p = paths[pi];
+                    ctx.beginPath();
+                    for(let i=0;i<p.length;i++){
+                        const x = pad + (w-2*pad)*(i/(p.length-1));
+                        const y = pad + (1 - (p[i]-min)/(max-min))*(h-2*pad);
+                        if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+                    }
+                    ctx.strokeStyle = colors[pi % colors.length]; ctx.lineWidth = 1.7; ctx.stroke();
+                }
+                // axis labels
+                ctx.fillStyle='#222'; ctx.font='12px sans-serif'; ctx.fillText('time', w/2, h-6);
+                ctx.save(); ctx.translate(10, h/2); ctx.rotate(-Math.PI/2); ctx.fillText('W(t)', 0,0); ctx.restore();
+            }
+
+            function drawHistogram(canvas, data, lambda){
+                const ctx = prepareCanvas(canvas);
+                const rect = canvas.getBoundingClientRect();
+                const w = rect.width, h = rect.height, pad = 40;
+                ctx.clearRect(0,0,w,h);
+                if(!data || data.length===0) return;
+                const bins = Math.min(40, Math.ceil(Math.sqrt(data.length)));
+                let min = Math.min(...data), max = Math.max(...data);
+                if(min===max){ min -= 0.5; max += 0.5; }
+                const binWidth = (max-min)/bins;
+                const counts = new Array(bins).fill(0);
+                data.forEach(v=>{ const i = Math.min(bins-1, Math.floor((v-min)/binWidth)); counts[i]++; });
+                const probs = counts.map(c=>c/data.length);
+                const maxVal = Math.max(...probs);
+                // bars
+                const bw = (w-2*pad)/bins;
+                for(let i=0;i<bins;i++){
+                    const barH = (probs[i]/maxVal)*(h-2*pad);
+                    const x = pad + i*bw; const y = h-pad-barH;
+                    ctx.fillStyle = '#7fb3ff'; ctx.fillRect(x, y, bw-1, barH);
+                }
+                // overlay normal pdf with mean 0 and sd = sigma*sqrt(dt) if lambda provided
+                if(typeof lambda === 'number'){
+                    // lambda here is sigma * sqrt(dt) used as sd
+                    const sd = lambda;
+                    ctx.beginPath();
+                    const steps = 200;
+                    // compute pdf values and scale to maxVal
+                    let localMaxPdf = 0; const pdfs = [];
+                    for(let s=0;s<=steps;s++){ const xval = min + (s/steps)*(max-min); const pdf = (1/(Math.sqrt(2*Math.PI)*sd))*Math.exp(-0.5*(xval/sd)*(xval/sd)); pdfs.push(pdf); if(pdf>localMaxPdf) localMaxPdf=pdf; }
+                    ctx.strokeStyle = '#d62728'; ctx.lineWidth = 2;
+                    for(let s=0;s<=steps;s++){ const xval = min + (s/steps)*(max-min); const pdf = pdfs[s]; const sx = pad + (s/steps)*(w-2*pad); const sy = h - pad - (pdf/localMaxPdf)* (h-2*pad) * (localMaxPdf/maxVal); if(s===0) ctx.moveTo(sx,sy); else ctx.lineTo(sx,sy); }
+                    ctx.stroke();
+                }
+            }
+
+            document.getElementById('bm_run').addEventListener('click', function(){
+                const T = parseFloat(document.getElementById('bm_T').value);
+                const n = parseInt(document.getElementById('bm_n').value,10);
+                const paths = parseInt(document.getElementById('bm_paths').value,10);
+                const sigma = parseFloat(document.getElementById('bm_sigma').value);
+                const status = document.getElementById('bm_status');
+                if(isNaN(T)||isNaN(n)||isNaN(paths)||isNaN(sigma) || n<=0 || paths<=0){ alert('Please enter valid parameters'); return; }
+                status.textContent = 'Simulating...';
+                // simulate
+                const dt = T / n;
+                const sd = sigma * Math.sqrt(dt);
+                const allPaths = [];
+                const increments = [];
+                for(let p=0;p<paths;p++){
+                    const arr = [0];
+                    for(let i=1;i<=n;i++){
+                        const z = boxMuller();
+                        const inc = sd * z;
+                        arr.push(arr[arr.length-1] + inc);
+                        if(p===0) increments.push(inc); // accumulate increments from the first path for histogram
+                    }
+                    allPaths.push(arr);
+                }
+                // draw
+                drawPaths(document.getElementById('bm_canvas'), allPaths, T, sigma);
+                drawHistogram(document.getElementById('bm_ia'), increments, sd);
+                status.textContent = 'Done';
+            });
+        })();
+        </script>
+    </body>
+</html>
